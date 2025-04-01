@@ -1,0 +1,8 @@
+torch
+torchvision
+gym
+pybullet
+tensorboardX
+tensorboard
+matplotlib
+Pillow
