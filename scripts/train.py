@@ -1,5 +1,3 @@
-import gym
-import math
 import random
 import numpy as np
 import matplotlib
@@ -21,6 +19,12 @@ import torchvision.transforms as T
 from pybullet_envs.bullet.kuka_diverse_object_gym_env import KukaDiverseObjectEnv
 from gym import spaces
 import pybullet as p
+
+import classes.Screen as Screen
+from classes.DQN import DQN
+from classes.ReplayMemory import ReplayMemory
+from classes.ReplayMemory import Transition
+
 
 env = KukaDiverseObjectEnv(renders=False, isDiscrete=True, removeHeightHack=False, maxSteps=20)
 env.cid = p.connect(p.DIRECT)
@@ -51,7 +55,7 @@ LEARNING_RATE = 1e-4
 
 # Get screen size so that we can initialize layers correctly based on shape
 # returned from pybullet (48, 48, 3).  
-init_screen = get_screen()
+init_screen = Screen.get_screen()
 _, _, screen_height, screen_width = init_screen.shape
 
 # Get number of actions from gym action space
@@ -158,7 +162,7 @@ start_time = timeit.default_timer()
 for i_episode in range(num_episodes):
     # Initialize the environment and state
     env.reset()
-    state = get_screen()
+    state = Screen.get_screen()
     stacked_states = collections.deque(STACK_SIZE*[state],maxlen=STACK_SIZE)
     for t in count():
         stacked_states_t =  torch.cat(tuple(stacked_states),dim=1)
@@ -168,7 +172,7 @@ for i_episode in range(num_episodes):
         reward = torch.tensor([reward], device=device)
 
         # Observe new state
-        next_state = get_screen()
+        next_state = Screen.get_screen()
         if not done:
             next_stacked_states = stacked_states
             next_stacked_states.append(next_state)

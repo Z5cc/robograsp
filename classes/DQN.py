@@ -1,3 +1,9 @@
+import torch.nn as nn
+import torch.nn.functional as F
+
+from classes.DQN import DQN
+
+
 STACK_SIZE = 5
 
 
