@@ -7,70 +7,43 @@ import collections
 from itertools import count
 import timeit
 from datetime import timedelta
-from PIL import Image
 from tensorboardX import SummaryWriter
-
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision.transforms as T
-
 from pybullet_envs.bullet.kuka_diverse_object_gym_env import KukaDiverseObjectEnv
-from gym import spaces
 import pybullet as p
-
-import classes.Screen as Screen
-from classes.DQN import DQN
-from classes.ReplayMemory import ReplayMemory
-from classes.ReplayMemory import Transition
+import modules.Screen as Screen
+from modules.DQN import DQN
+from modules.ReplayMemory import ReplayMemory
+from modules.ReplayMemory import Transition
+import modules.Config as c
 
 
 env = KukaDiverseObjectEnv(renders=False, isDiscrete=True, removeHeightHack=False, maxSteps=20)
 env.cid = p.connect(p.DIRECT)
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
 if is_ipython:
     from IPython import display
-
 plt.ion()
 
-# if gpu is to be used
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-
-
-
-
-BATCH_SIZE = 32
-GAMMA = 0.99
-EPS_START = 0.9
-EPS_END = 0.1
-EPS_DECAY = 200
-EPS_DECAY_LAST_FRAME = 10**4
-TARGET_UPDATE = 1000
-LEARNING_RATE = 1e-4
 
 # Get screen size so that we can initialize layers correctly based on shape
 # returned from pybullet (48, 48, 3).  
-init_screen = Screen.get_screen()
+init_screen = Screen.get_screen(env, device)
 _, _, screen_height, screen_width = init_screen.shape
-
 # Get number of actions from gym action space
 n_actions = env.action_space.n
-
-policy_net = DQN(screen_height, screen_width, n_actions).to(device)
-target_net = DQN(screen_height, screen_width, n_actions).to(device)
+policy_net = DQN(screen_height, screen_width, n_actions, c.STACK_SIZE).to(device)
+target_net = DQN(screen_height, screen_width, n_actions, c.STACK_SIZE).to(device)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
-
-optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
+optimizer = optim.Adam(policy_net.parameters(), lr=c.LEARNING_RATE)
 memory = ReplayMemory(10000)
-
 eps_threshold = 0
-
 
 
 
@@ -83,7 +56,7 @@ def select_action(state, i_episode):
     global steps_done
     global eps_threshold
     sample = random.random()
-    eps_threshold = max(EPS_END, EPS_START - i_episode / EPS_DECAY_LAST_FRAME)
+    eps_threshold = max(c.EPS_END, c.EPS_START - i_episode / c.EPS_DECAY_LAST_FRAME)
     if sample > eps_threshold:
         with torch.no_grad():
             # t.max(1) will return largest column value of each row.
@@ -96,14 +69,10 @@ def select_action(state, i_episode):
 
 
 
-
-
-
-
 def optimize_model():
-    if len(memory) < BATCH_SIZE:
+    if len(memory) < c.BATCH_SIZE:
         return
-    transitions = memory.sample(BATCH_SIZE)
+    transitions = memory.sample(c.BATCH_SIZE)
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). This converts batch-array of Transitions
     # to Transition of batch-arrays.
@@ -129,10 +98,10 @@ def optimize_model():
     # on the "older" target_net; selecting their best reward with max(1)[0].
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
-    next_state_values = torch.zeros(BATCH_SIZE, device=device)
+    next_state_values = torch.zeros(c.BATCH_SIZE, device=device)
     next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
     # Compute the expected Q values
-    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+    expected_state_action_values = (next_state_values * c.GAMMA) + reward_batch
 
     # Compute Huber loss
     loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
@@ -151,7 +120,6 @@ def optimize_model():
 
 
 
-PATH = 'policy_dqn.pt'
 
 num_episodes = 10000000
 writer = SummaryWriter()
@@ -162,8 +130,8 @@ start_time = timeit.default_timer()
 for i_episode in range(num_episodes):
     # Initialize the environment and state
     env.reset()
-    state = Screen.get_screen()
-    stacked_states = collections.deque(STACK_SIZE*[state],maxlen=STACK_SIZE)
+    state = Screen.get_screen(env, device)
+    stacked_states = collections.deque(c.STACK_SIZE*[state],maxlen=c.STACK_SIZE)
     for t in count():
         stacked_states_t =  torch.cat(tuple(stacked_states),dim=1)
         # Select and perform an action
@@ -172,7 +140,7 @@ for i_episode in range(num_episodes):
         reward = torch.tensor([reward], device=device)
 
         # Observe new state
-        next_state = Screen.get_screen()
+        next_state = Screen.get_screen(env, device)
         if not done:
             next_stacked_states = stacked_states
             next_stacked_states.append(next_state)
@@ -200,7 +168,7 @@ for i_episode in range(num_episodes):
                         'policy_net_state_dict': policy_net.state_dict(),
                         'target_net_state_dict': target_net.state_dict(),
                         'optimizer_policy_net_state_dict': optimizer.state_dict()
-                        }, PATH)
+                        }, c.PATH)
                 if best_mean_reward is not None:
                     print("Best mean reward updated %.1f -> %.1f, model saved" % (best_mean_reward, mean_reward))
                 best_mean_reward = mean_reward
@@ -211,7 +179,7 @@ for i_episode in range(num_episodes):
             ten_rewards = 0
     
     # Update the target network, copying all weights and biases in DQN
-    if i_episode % TARGET_UPDATE == 0:
+    if i_episode % c.ARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
     if i_episode>=200 and mean_reward>50:
         print('Environment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode+1, mean_reward))

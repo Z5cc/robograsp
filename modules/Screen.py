@@ -12,7 +12,7 @@ preprocess = T.Compose([T.ToPILImage(),
                     T.Resize(40, interpolation=Image.CUBIC),
                     T.ToTensor()])
 
-def get_screen():
+def get_screen(env, device):
     global stacked_screens
     # Returned screen requested by gym is 400x600x3, but is sometimes larger
     # such as 800x1200x3. Transpose it into torch order (CHW).
@@ -26,9 +26,9 @@ def get_screen():
     return preprocess(screen).unsqueeze(0).to(device)
 
 
-env.reset()
-plt.figure()
-plt.imshow(get_screen().cpu().squeeze(0)[-1].numpy(),cmap='Greys',
-           interpolation='none')
-plt.title('Example extracted screen')
-plt.show()
+# env.reset()
+# plt.figure()
+# plt.imshow(get_screen().cpu().squeeze(0)[-1].numpy(),cmap='Greys',
+#            interpolation='none')
+# plt.title('Example extracted screen')
+# plt.show()

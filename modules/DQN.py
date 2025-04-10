@@ -1,16 +1,15 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from classes.DQN import DQN
 
 
-STACK_SIZE = 5
+
 
 
 class DQN(nn.Module):
-    def __init__(self, h, w, outputs):
+    def __init__(self, h, w, outputs, stack_size):
         super(DQN, self).__init__()  
-        self.conv1 = nn.Conv2d(STACK_SIZE, 32, kernel_size=8, stride=4)
+        self.conv1 = nn.Conv2d(stack_size, 32, kernel_size=8, stride=4)
         self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.bn2 = nn.BatchNorm2d(64)
