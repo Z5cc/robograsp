@@ -1,0 +1,51 @@
+do inverse kinematics, because then robot does not need to learn inverse kinematics. use delta instead of absolute, because 
+
+
+do it all in two steps:
+
+
+1.
+observation space:
+only vision [no current position, because of mechanical inaccuracies]
+
+action space:
+a_t e   [delta_pos[for now only x_y_z],close or open the gripper] 
+
+
+2.
+observation space:
+vision + torque sensor
+
+action space:
+more granular
+
+
+
+
+
+
+
+
+
+
+
+Reinforcement learning:
+
+step 1:
+find out how the two environments work
+
+step 2:
+find out how to train them with PPO etc... also try to find out how PPO etc... works...
+
+
+
+
+
+probably robot not learning sufficiently is because da and dz are mixed when sending to kuka.apply action...
+
+
+
+
+
+f = 0.3
+realAction = [dx, dy, -0.002, da, f]

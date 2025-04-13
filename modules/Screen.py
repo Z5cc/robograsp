@@ -1,15 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from collections import namedtuple
 from PIL import Image
-
 import torch
 import torchvision.transforms as T
 
 
 preprocess = T.Compose([T.ToPILImage(),
                     T.Grayscale(num_output_channels=1),
-                    T.Resize(40, interpolation=Image.CUBIC),
+                    T.Resize(40, interpolation=Image.Resampling.BICUBIC),
                     T.ToTensor()])
 
 def get_screen(env, device):

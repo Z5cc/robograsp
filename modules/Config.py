@@ -1,14 +1,10 @@
-import matplotlib
-import matplotlib.pyplot as plt
-from collections import namedtuple
-import collections
 import torch
 import torch.optim as optim
 from pybullet_envs.bullet.kuka_diverse_object_gym_env import KukaDiverseObjectEnv
 import pybullet as p
+
 import modules.Screen as Screen
 from modules.DQN import DQN
-from modules.ReplayMemory import ReplayMemory
 
 
 BATCH_SIZE = 32
@@ -27,12 +23,13 @@ PATH = 'policy_dqn.pt'
 
 def get_env_and_device(isTest):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    env = KukaDiverseObjectEnv(renders=False, isDiscrete=True, removeHeightHack=False, maxSteps=20, isTest=isTest)
+    env = KukaDiverseObjectEnv(renders=True, isDiscrete=True, removeHeightHack=False, maxSteps=20, isTest=isTest)
     env.cid = p.connect(p.DIRECT)
     n_actions = env.action_space.n
     return env, device, n_actions
 
 def get_screen_size(env, device):
+    env.reset()
     init_screen = Screen.get_screen(env, device)
     _, _, screen_height, screen_width = init_screen.shape
     return screen_height, screen_width
@@ -49,7 +46,7 @@ def build_train_model():
     return n_actions, env, device, policy_net, target_net, optimizer
 
 def build_test_model():
-    env, device, n_actions = get_env_and_device(isTest = False)
+    env, device, n_actions = get_env_and_device(isTest = True)
     screen_height, screen_width = get_screen_size(env, device)
 
     policy_net = DQN(screen_height, screen_width, n_actions, STACK_SIZE).to(device)

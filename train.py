@@ -9,44 +9,28 @@ import timeit
 from datetime import timedelta
 from tensorboardX import SummaryWriter
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
-from pybullet_envs.bullet.kuka_diverse_object_gym_env import KukaDiverseObjectEnv
 import pybullet as p
-import modules.Screen as Screen
-from modules.DQN import DQN
+
 from modules.ReplayMemory import ReplayMemory
 from modules.ReplayMemory import Transition
+import modules.Screen as Screen
 import modules.Config as c
 
 
-env = KukaDiverseObjectEnv(renders=False, isDiscrete=True, removeHeightHack=False, maxSteps=20)
-env.cid = p.connect(p.DIRECT)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+n_actions, env, device, policy_net, target_net, optimizer = c.build_train_model()
+
+
+
+memory = ReplayMemory(10000)
+eps_threshold = 0
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
 if is_ipython:
     from IPython import display
 plt.ion()
-
-
-
-# Get screen size so that we can initialize layers correctly based on shape
-# returned from pybullet (48, 48, 3).  
-init_screen = Screen.get_screen(env, device)
-_, _, screen_height, screen_width = init_screen.shape
-# Get number of actions from gym action space
-n_actions = env.action_space.n
-policy_net = DQN(screen_height, screen_width, n_actions, c.STACK_SIZE).to(device)
-target_net = DQN(screen_height, screen_width, n_actions, c.STACK_SIZE).to(device)
-target_net.load_state_dict(policy_net.state_dict())
-target_net.eval()
-optimizer = optim.Adam(policy_net.parameters(), lr=c.LEARNING_RATE)
-memory = ReplayMemory(10000)
-eps_threshold = 0
-
-
-
 
 
 
@@ -179,7 +163,7 @@ for i_episode in range(num_episodes):
             ten_rewards = 0
     
     # Update the target network, copying all weights and biases in DQN
-    if i_episode % c.ARGET_UPDATE == 0:
+    if i_episode % c.TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
     if i_episode>=200 and mean_reward>50:
         print('Environment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode+1, mean_reward))

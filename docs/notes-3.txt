@@ -1,0 +1,8 @@
+TODO:
+- improve codebase: more OOP, more modular + include PPO and compare performance
+- somehow make the problem simpler (only one cube), multiple object is only relvevant for vision-only reach-phase
+- implement two phases:
+    - a) input: vision          output: position 
+    - b)
+        - control point of view:    torque_wanted (voltage_wanted) - torque_measured (voltage_measured)        ->          torque_input (voltage_input)
+        - AI:   hierarchical reinforcement learning etc...

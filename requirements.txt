@@ -1,6 +1,6 @@
 torch
 torchvision
-gym
+gym<0.26
 pybullet
 tensorboardX
 tensorboard
