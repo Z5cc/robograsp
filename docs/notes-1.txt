@@ -1,0 +1,67 @@
+    • be able to control it properly
+        ◦ simulation, when to apply control
+        ◦ control: quaternions
+        ◦ control: forward, reverse kinematics...
+        ◦ control: different kind of controls via position or velocity and others…
+        ◦ how to simulate mechanical inaccuracies
+    • now maybe need a policy or something: combination of hardcoded movement. Then step by step make it more autonomous. Include tactile and visual sensors.
+        ◦ At which point does it even make sense to apply AI
+
+    • control advanced
+        ◦ ROS
+        ◦ inaccuracies:    how to deal with inaccuracies and how to adopt policy to real world etc...
+            ▪  Joint friction &  damping → Models gear friction & lubrication
+            ▪ 🔹 Backlash (Loose joints) → Simulates imperfect mechanical fits
+            ▪ 🔹 Sensor noise → Mimics encoder inaccuracies
+            ▪ 🔹 Actuation delay → Accounts for control lag
+            ▪ 🔹 External disturbances → Adds vibration & unexpected forces
+            ▪ 🔹 Soft constraints → Simulates elasticity in the structure
+        ◦ switch control mode dependent of in touch with object or not, also switch sense input etc…   use AI to make this switch intelligent
+
+    • hardware: don’t use a hand, but use multi finger gripper with x amount of fingers. For sensor try different sensors…
+
+
+
+    • observation space. Action space. For action space do it with variable granularity. Depending on what is observed. Different kind of controls: position control vs force controls
+    • and make learning very efficience: maybe something like ken. Guided reinforcement learning.
+
+
+
+    • Torque = J*q’’+Friction*q’+F_touchsensor*finger_length
+        ◦ could calculate necessary torque with touchsensor information
+        ◦ however due to q being almost zero equation simplifies to Torque = F_touchsensor*finger_length. In thaat regards touchsensors do not add that much of informations. Only when q != 0.   → one could say touch sensors are important to not destroy objects to reduce pressure…, in case object is smalcan you hide all foldersl.
+
+
+-------→ 1. focus on control switch from position/velocity to force control
+-------→ 2. focus on using touch sensors to not destroy objects
+-------→ 3. focus on finding nice grasps/also maybe regrasps. For example grasping the handle of a tea cup. Therefore tactile array sensor are of great value, because they can detect where exactly the object is at the finger.
+
+-------→ 4. in the end focus on improving inaccuracies when transfering to real world
+
+
+
+Reward function: after applying forces in different directions on object.
+
+Shaped rewards. Closeness of end efector to object.
+
+
+
+
+Action space:
+MODE:
+position/velocity controls:
+- 
+torque control:
+- torque
+
+GRANULARITY
+
+
+Observation space:
+
+
+
+
+
+PREPARE INPUT AND OUTPUT SPACE FOR REINFORCEMENT LEARNING:
+- get a robot with very less degrees of freedom. Make objects first very simple.

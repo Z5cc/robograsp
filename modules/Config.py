@@ -23,7 +23,7 @@ PATH = 'policy_dqn.pt'
 
 def get_env_and_device(isTest):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    env = KukaDiverseObjectEnv(renders=True, isDiscrete=True, removeHeightHack=False, maxSteps=20, isTest=isTest)
+    env = KukaDiverseObjectEnv(renders=True, isDiscrete=True, removeHeightHack=False, maxSteps=20, numObjects=1, isTest=isTest)
     env.cid = p.connect(p.DIRECT)
     n_actions = env.action_space.n
     return env, device, n_actions

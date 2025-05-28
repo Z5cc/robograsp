@@ -6,3 +6,112 @@ TODO:
     - b)
         - control point of view:    torque_wanted (voltage_wanted) - torque_measured (voltage_measured)        ->          torque_input (voltage_input)
         - AI:   hierarchical reinforcement learning etc...
+
+
+
+instead of two phase: do 1 phase.         but arm: position control.      finger: force control               input: fuse vision and torque sensors.
+    ->  for arm movement:   knows to move down when no strong torque sensor feedback.  knows to move up when strong torque sensor feedback.     knows how to center gripper: basically 2D problem...      ...bad grip: hopefully learns regrasp....
+    ->  for finger force control:     when initially feeling torque: increase force control until is enough....
+
+... all this can maybe be better learned when applying to big objects....
+eventually using torque sensor could lead to 100% success rate, because regrasp will be triggered when torque sensor do not recognize anything
+
+
+
+
+
+Best mean reward updated 49.860 -> 49.880, model saved
+Best mean reward updated 49.880 -> 49.890, model saved
+Best mean reward updated 49.890 -> 49.910, model saved
+Best mean reward updated 49.910 -> 50.050, model saved
+Environment solved in 183 seasons!      Average Score: 50.05
+Average Score: 50.05
+Elapsed time: 5:38:58.660419
+
+
+
+Best mean reward updated 45.000 -> 45.875, model saved
+Best mean reward updated 45.875 -> 46.364, model saved
+Best mean reward updated 46.364 -> 46.750, model saved
+Best mean reward updated 46.750 -> 47.609, model saved
+Best mean reward updated 47.609 -> 47.625, model saved
+Best mean reward updated 47.625 -> 47.654, model saved
+Best mean reward updated 47.654 -> 48.000, model saved
+Best mean reward updated 48.000 -> 48.310, model saved
+Best mean reward updated 48.310 -> 48.667, model saved
+Best mean reward updated 48.667 -> 48.935, model saved
+Best mean reward updated 48.935 -> 49.000, model saved
+Best mean reward updated 49.000 -> 49.273, model saved
+Best mean reward updated 49.273 -> 49.676, model saved
+Best mean reward updated 49.676 -> 49.800, model saved
+Best mean reward updated 49.800 -> 50.111, model saved
+Environment solved in 36 seasons!       Average Score: 50.11
+Average Score: 50.11
+Elapsed time: 2:23:01.454137
+
+
+
+
+PPO
+
+Best mean reward updated 49.460 -> 49.470, model saved
+Best mean reward updated 49.470 -> 49.560, model saved
+Best mean reward updated 49.560 -> 49.590, model saved
+Best mean reward updated 49.590 -> 49.660, model saved
+Best mean reward updated 49.660 -> 49.780, model saved
+Best mean reward updated 49.780 -> 49.820, model saved
+Best mean reward updated 49.820 -> 49.950, model saved
+Best mean reward updated 49.950 -> 49.990, model saved
+Best mean reward updated 49.990 -> 50.060, model saved
+Environment solved in 674 seasons!      Average Score: 50.06
+Average Score: 50.06
+Elapsed time: 23:13:10.376860
+
+
+
+DQN
+
+Best mean reward updated 41.0 -> 42.0, model saved
+Best mean reward updated 42.0 -> 43.0, model saved
+Best mean reward updated 43.0 -> 44.0, model saved
+Best mean reward updated 44.0 -> 45.0, model saved
+Best mean reward updated 45.0 -> 46.0, model saved
+Best mean reward updated 46.0 -> 47.0, model saved
+Best mean reward updated 47.0 -> 48.0, model saved
+Best mean reward updated 48.0 -> 49.0, model saved
+Best mean reward updated 49.0 -> 50.0, model saved
+Best mean reward updated 50.0 -> 51.0, model saved
+Environment solved in 255254 episodes!  Average Score: 51.00
+Average Score: 51.00
+Elapsed time: 2 days, 3:30:26.301165
+
+
+
+def init
+
+
+def render
+
+
+def step
+    def _getExtendedObservation
+    def _termination
+    def _reward
+
+
+
+
+
+
+
+
+current input:
+KukaGymEnv: just camera
+KukaCamGymEnv: objectposition relative to gripper + all from __kuka
+KukaDiverseObjectEnv(KukaGymEnv): just camera
+
+
+
+1. more input: fuse vision with perception(torque in gripper)
+find out which gripper it is and if i get 2 or 1 torque and how __kuka class handles all this
+-> find a robot class which has all these. a good gripper with torque sensor. and then how to deal with the default -0.002
