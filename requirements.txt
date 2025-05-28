@@ -1,9 +1,7 @@
-torch
-torchvision
-gym<0.26
+attrdict
+numpy
+opencv-python
 pybullet
-tensorboardX
-tensorboard
-matplotlib
-Pillow
-ipython
+scipy
+torch
+tqdm
