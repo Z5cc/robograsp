@@ -5,3 +5,29 @@ goal for now: whatever xyz coordinate i give, it should not struggle anymore
     - if it is a problem right now going out of coordinates
         -> solution for both problems: use null space control -> apparantely according to chatgpt nullspace in pybullet only for 6dof vs 7dof, not on discrete several solutions... check that out
     - why for roll, other coordinates move
+
+
+id name type lowerLimit upperLimit maxForce maxVelocity controllable
+jointInfo(id=0, name='world_arm_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=1, name='shoulder_pan_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+jointInfo(id=2, name='shoulder_lift_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+jointInfo(id=3, name='elbow_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+jointInfo(id=4, name='wrist_1_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+jointInfo(id=5, name='wrist_2_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+jointInfo(id=6, name='wrist_3_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+jointInfo(id=7, name='ee_fixed_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=8, name='robotiq_85_base_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=9, name='finger_joint', type=0, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=0.8, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+jointInfo(id=10, name='left_outer_finger_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=11, name='left_inner_finger_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-0.8757, upperLimit=0.0, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+jointInfo(id=12, name='left_inner_finger_pad_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=13, name='left_inner_knuckle_joint', type=0, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=0.8757, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+jointInfo(id=14, name='right_outer_knuckle_joint', type=0, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=0.81, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+jointInfo(id=15, name='right_outer_finger_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=16, name='right_inner_finger_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-0.8757, upperLimit=0.0, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+jointInfo(id=17, name='right_inner_finger_pad_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+jointInfo(id=18, name='right_inner_knuckle_joint', type=0, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=0.8757, maxForce=1000.0, maxVelocity=2.0, controllable=True)
+
+
+investigate roll, pitch, yaw.  when pitch is at 90 degree. roll and yaw is same: gimbal lock? investigate that.
+also check if lower and upperlimits of arm are respected in inverse kinematics.

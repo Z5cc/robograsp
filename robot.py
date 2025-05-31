@@ -21,7 +21,7 @@ class RobotBase(object):
     def __parse_joint_info__(self):
         numJoints = p.getNumJoints(self.id)
         jointInfo = namedtuple('jointInfo', 
-            ['id','name','type','damping','friction','lowerLimit','upperLimit','maxForce','maxVelocity','controllable'])
+            ['id','name','type','damping','friction','maxForce','maxVelocity','controllable'])
         self.joints = []
         self.controllable_joints = []
         for i in range(numJoints):
@@ -31,24 +31,18 @@ class RobotBase(object):
             jointType = info[2]  # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
             jointDamping = info[6]
             jointFriction = info[7]
-            jointLowerLimit = info[8]
-            jointUpperLimit = info[9]
             jointMaxForce = info[10]
             jointMaxVelocity = info[11]
             controllable = (jointType != p.JOINT_FIXED)
             if controllable:
                 self.controllable_joints.append(jointID)
                 p.setJointMotorControl2(self.id, jointID, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
-            info = jointInfo(jointID,jointName,jointType,jointDamping,jointFriction,jointLowerLimit,
-                            jointUpperLimit,jointMaxForce,jointMaxVelocity,controllable)
+            info = jointInfo(jointID,jointName,jointType,jointDamping,jointFriction, jointMaxForce,jointMaxVelocity,controllable)
             self.joints.append(info)
 
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
 
-        self.arm_lower_limits = [info.lowerLimit for info in self.joints if info.controllable][:self.arm_num_dofs]
-        self.arm_upper_limits = [info.upperLimit for info in self.joints if info.controllable][:self.arm_num_dofs]
-        self.arm_joint_ranges = [info.upperLimit - info.lowerLimit for info in self.joints if info.controllable][:self.arm_num_dofs]
 
     def __init_robot__(self):
         raise NotImplementedError
@@ -87,8 +81,8 @@ class RobotBase(object):
             pos = (x, y, z)
             orn = p.getQuaternionFromEuler((roll, pitch, yaw))
             joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
-                                                       self.arm_lower_limits, self.arm_upper_limits, self.arm_joint_ranges, self.arm_rest_poses,
-                                                       maxNumIterations=20)
+                                                       self.ll, self.ul, self.jr, self.arm_rest_poses,
+                                                       maxNumIterations=20,jointDamping=self.jd)
         elif control_method == 'joint':
             assert len(action) == self.arm_num_dofs
             joint_poses = action
@@ -115,12 +109,16 @@ class RobotBase(object):
 
 class UR5Robotiq85(RobotBase):
     def __init_robot__(self):
-        self.eef_id = 7
-        self.arm_num_dofs = 6
+        self.ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
+        self.ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
+        self.jr = [u-l for u,l in zip(self.ul,self.ll)]
         self.arm_rest_poses = [-1.5690622952052096, -1.5446774605904932, 1.343946009733127, -1.3708613585093699,
                                -1.5707970583733368, 0.0009377758247187636]
+        self.jd = 13*[0.00001]
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                              useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
+        self.eef_id = 7
+        self.arm_num_dofs = 6
         self.gripper_range = [0, 0.085]
     
     def __post_load__(self):
