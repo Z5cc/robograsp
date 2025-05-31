@@ -4,35 +4,8 @@ from collections import namedtuple
 
 
 class RobotBase(object):
-    """
-    The base class for robots
-    """
 
     def __init__(self, pos, ori):
-        """
-        Arguments:
-            pos: [x y z]
-            ori: [r p y]
-
-        Attributes:
-            id: Int, the ID of the robot
-            eef_id: Int, the ID of the End-Effector
-            arm_num_dofs: Int, the number of DoFs of the arm
-                i.e., the IK for the EE will consider the first `arm_num_dofs` controllable (non-Fixed) joints
-            joints: List, a list of joint info
-            controllable_joints: List of Ints, IDs for all controllable joints
-            arm_controllable_joints: List of Ints, IDs for all controllable joints on the arm (that is, the first `arm_num_dofs` of controllable joints)
-
-            ---
-            For null-space IK
-            ---
-            arm_lower_limits: List, the lower limits for all controllable joints on the arm
-            arm_upper_limits: List
-            arm_joint_ranges: List
-            arm_rest_poses: List, the rest position for all controllable joints on the arm
-
-            gripper_range: List[Min, Max]
-        """
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
 
@@ -138,31 +111,6 @@ class RobotBase(object):
         return dict(positions=positions, velocities=velocities, ee_pos=ee_pos)
 
 
-class Panda(RobotBase):
-    def __init_robot__(self):
-        # define the robot
-        # see https://github.com/bulletphysics/bullet3/blob/master/examples/pybullet/gym/pybullet_robots/panda/panda_sim_grasp.py
-        self.eef_id = 11
-        self.arm_num_dofs = 7
-        self.arm_rest_poses = [0.98, 0.458, 0.31, -2.24, -0.30, 2.66, 2.32]
-        self.id = p.loadURDF('./urdf/panda.urdf', self.base_pos, self.base_ori,
-                             useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        self.gripper_range = [0, 0.04]
-        # create a constraint to keep the fingers centered
-        c = p.createConstraint(self.id,
-                               9,
-                               self.id,
-                               10,
-                               jointType=p.JOINT_GEAR,
-                               jointAxis=[1, 0, 0],
-                               parentFramePosition=[0, 0, 0],
-                               childFramePosition=[0, 0, 0])
-        p.changeConstraint(c, gearRatio=-1, erp=0.1, maxForce=50)
-
-    def move_gripper(self, open_length):
-        assert self.gripper_range[0] <= open_length <= self.gripper_range[1]
-        for i in [9, 10]:
-            p.setJointMotorControl2(self.id, i, p.POSITION_CONTROL, open_length, force=20)
 
 
 class UR5Robotiq85(RobotBase):
@@ -204,24 +152,3 @@ class UR5Robotiq85(RobotBase):
         # Control the mimic gripper joint(s)
         p.setJointMotorControl2(self.id, self.mimic_parent_id, p.POSITION_CONTROL, targetPosition=open_angle,
                                 force=self.joints[self.mimic_parent_id].maxForce, maxVelocity=self.joints[self.mimic_parent_id].maxVelocity)
-
-
-class UR5Robotiq140(UR5Robotiq85):
-    def __init_robot__(self):
-        self.eef_id = 7
-        self.arm_num_dofs = 6
-        self.arm_rest_poses = [-1.5690622952052096, -1.5446774605904932, 1.343946009733127, -1.3708613585093699,
-                               -1.5707970583733368, 0.0009377758247187636]
-        self.id = p.loadURDF('./urdf/ur5_robotiq_140.urdf', self.base_pos, self.base_ori,
-                             useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        self.gripper_range = [0, 0.085]
-        # TODO: It's weird to use the same range and the same formula to calculate open_angle as Robotiq85.
-
-    def __post_load__(self):
-        mimic_parent_name = 'finger_joint'
-        mimic_children_names = {'right_outer_knuckle_joint': -1,
-                                'left_inner_knuckle_joint': -1,
-                                'right_inner_knuckle_joint': -1,
-                                'left_inner_finger_joint': 1,
-                                'right_inner_finger_joint': 1}
-        self.__setup_mimic_joints__(mimic_parent_name, mimic_children_names)

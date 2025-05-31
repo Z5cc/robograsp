@@ -1,0 +1,7 @@
+goal for now: whatever xyz coordinate i give, it should not struggle anymore
+- kuka for x,y,z does incremental movements
+- for ur5 find out
+    - why if pitch changing fast, robot gets out of control
+    - if it is a problem right now going out of coordinates
+        -> solution for both problems: use null space control -> apparantely according to chatgpt nullspace in pybullet only for 6dof vs 7dof, not on discrete several solutions... check that out
+    - why for roll, other coordinates move
