@@ -31,3 +31,4 @@ jointInfo(id=18, name='right_inner_knuckle_joint', type=0, damping=0.0, friction
 
 investigate roll, pitch, yaw.  when pitch is at 90 degree. roll and yaw is same: gimbal lock? investigate that.
 also check if lower and upperlimits of arm are respected in inverse kinematics.
+move end effector center to grip center + limit xyz and limit angles, so that robot grasps only to front, down, left and right. then test out all limits so that everything is stable  -> also shall make movements less sporadic
