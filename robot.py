@@ -41,6 +41,7 @@ class Robot:
             controllable = (jointType != p.JOINT_FIXED)
             if controllable:
                 self.controllable_joints.append(i)
+                p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
 
