@@ -17,7 +17,7 @@ class Robot:
     def __init_robot__(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        self.eef_id = 7
+        self.eef_id = 8 # link index, not joint index
         
         self.arm_num_dofs = 6
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]

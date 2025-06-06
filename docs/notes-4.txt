@@ -8,15 +8,26 @@ goal for now: whatever xyz coordinate i give, it should not struggle anymore
 
 
 id name type lowerLimit upperLimit maxForce maxVelocity controllable
-jointInfo(id=0, name='world_arm_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+
+    world (id=-1)
+jointInfo(id=0, name='world_arm_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False) # connects world with arm
+base_link (id=0)
 jointInfo(id=1, name='shoulder_pan_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+shoulder_link (id=1)
 jointInfo(id=2, name='shoulder_lift_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+upper_arm_link (id=2)
 jointInfo(id=3, name='elbow_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=150.0, maxVelocity=3.15, controllable=True)
+forearm_link (id=3)
 jointInfo(id=4, name='wrist_1_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+wrist_1_link (id=4)
 jointInfo(id=5, name='wrist_2_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+wrist_2_link (id=5)
 jointInfo(id=6, name='wrist_3_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-3.14159265359, upperLimit=3.14159265359, maxForce=28.0, maxVelocity=3.2, controllable=True)
+wrist_3_link (id=6)
 jointInfo(id=7, name='ee_fixed_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
-jointInfo(id=8, name='robotiq_85_base_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
+ee_link (id=7)
+
+jointInfo(id=8, name='robotiq_85_base_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False) # connects arm with gripper
 jointInfo(id=9, name='finger_joint', type=0, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=0.8, maxForce=1000.0, maxVelocity=2.0, controllable=True)
 jointInfo(id=10, name='left_outer_finger_joint', type=4, damping=0.0, friction=0.0, lowerLimit=0.0, upperLimit=-1.0, maxForce=0.0, maxVelocity=0.0, controllable=False)
 jointInfo(id=11, name='left_inner_finger_joint', type=0, damping=0.0, friction=0.0, lowerLimit=-0.8757, upperLimit=0.0, maxForce=1000.0, maxVelocity=2.0, controllable=True)
@@ -37,3 +48,25 @@ TODO
 1. move end effector center
 2. limit joint angles
 3. limit xyz and end effector coordinates
+
+
+
+roll and pitch is around local tcp axis
+yaw is around global z axis
+
+... maybe there is an issue with getQuaternionFromEuler
+
+not matter if we do roll or yaw first, x axis is aligned with tool, so roll will always just rotate the tool
+now the question is, does it make a difference if it is first rolled or first yawed
+
+
+first doing roll around red x and then pitch around green y, leads to a pitch around a different green y axis caused by the roll
+
+
+maybe red x needs to be last axis
+also for airplane model, you can do yaw pitch roll or    roll pitch yaw
+so    using either yaw(z) pitch(y) roll(x)      or     roll(x) pitch(y) yaw(z)       leads to different quaternions.
+we can make the function   yaw=z   pitch=y   roll=x, because when in simulation all rotaiotns are at 0, yaw causes rotation around z, pitch around y and roll around x
+---->>   zyx order. first z, then y, then x
+
+So PyBullet's Euler input assumes: ZYX intrinsic
