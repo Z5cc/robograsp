@@ -2,6 +2,9 @@ import pybullet as p
 import math
 from collections import namedtuple
 from gripper import Gripper
+import numpy as np
+from scipy.spatial.transform import Rotation as R
+
 
 
 class Robot:
@@ -12,7 +15,7 @@ class Robot:
 
     def load(self):
         self.__init_robot__()
-        self.__init_gripper__()
+        # self.__init_gripper__()
 
     def __init_robot__(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
@@ -48,6 +51,43 @@ class Robot:
         
     def __init_gripper__(self):
         self.gripper = Gripper(self.id, self.j_names, self.j_maxForce, self.j_maxVelocity)
+
+
+
+    
+    def delta_to_absolute(self, delta):
+        dx, dy, dz, droll, dpitch, dyaw = delta
+
+        # 1. get current end-effector pose in world frame
+        state_ee = p.getLinkState(self.id, self.eef_id)
+        t_ee = np.array(state_ee[0])  # translation
+        rot_ee = np.array(state_ee[1])  # quaternion (x,y,z,w)
+
+        # 2. translation
+        R_ee = np.array(p.getMatrixFromQuaternion(rot_ee)).reshape(3, 3)
+        dt_ee = np.array([dx, dy, dz])
+        dt_world = R_ee @ dt_ee
+        t_new = t_ee + dt_world
+
+        # 3. rotation
+        
+
+
+        # 3. build delta transformation in local frame
+        
+        delta_rot = R.from_euler('xyz', [droll, dpitch, dyaw]).as_matrix()
+
+        T_delta = np.eye(4)
+        T_delta[:3, :3] = delta_rot
+        T_delta[:3, 3] = delta_trans
+
+        # 4. compute new pose in world frame
+        T_target = T_current @ T_delta
+
+        new_pos = T_target[:3, 3]
+        new_rot = R.from_matrix(T_target[:3, :3]).as_euler('xyz')
+
+        return t_new.tolist() + new_rot.tolist()
     
 
 
@@ -56,7 +96,7 @@ class Robot:
     def move_ee(self, action, control_method):
         assert control_method in ('joint', 'end')
         if control_method == 'end':
-            x, y, z, roll, pitch, yaw = action
+            x, y, z, roll, pitch, yaw = self.delta_to_absolute(action)
             pos = (x, y, z)
             orn = p.getQuaternionFromEuler((roll, pitch, yaw))
             joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
@@ -71,13 +111,16 @@ class Robot:
                                     force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
             
     def move_gripper(self, open_length):
-        self.gripper.move(open_length)
+        # self.gripper.move(open_length)
+        pass
 
     def open_gripper(self):
-        self.gripper.open()
+        # self.gripper.open()
+        pass
 
     def close_gripper(self):
-        self.gripper.close()
+        # self.gipper.close()
+        pass
 
 
 
@@ -86,7 +129,7 @@ class Robot:
 
     def reset(self):
         self.reset_arm()
-        self.gripper.reset()
+        # self.gripper.reset()
 
     def reset_arm(self):
         """

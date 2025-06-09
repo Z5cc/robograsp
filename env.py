@@ -37,12 +37,12 @@ class ClutteredPushGrasp:
         self.robot.step_simulation = self.step_simulation
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
-        self.xin = p.addUserDebugParameter("x", -0.224, 0.224, 0)
-        self.yin = p.addUserDebugParameter("y", -0.224, 0.224, 0)
-        self.zin = p.addUserDebugParameter("z", 0, 1., 0.5)
-        self.rollId = p.addUserDebugParameter("roll", -3.14, 3.14, 0)
-        self.pitchId = p.addUserDebugParameter("pitch", -3.14, 3.14, np.pi/2)
-        self.yawId = p.addUserDebugParameter("yaw", -np.pi/2, np.pi/2, np.pi/2)
+        self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
+        self.dyin = p.addUserDebugParameter("dy", -0.1, 0.1, 0)
+        self.dzin = p.addUserDebugParameter("dz", -0.1, 0.1, 0)
+        self.drollId = p.addUserDebugParameter("droll", -0.1, 0.1, 0)
+        self.dpitchId = p.addUserDebugParameter("dpitch", -0.1, 0.1, 0)
+        self.dyawId = p.addUserDebugParameter("dyaw", -0.1, 0.1, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
         self.boxID = p.loadURDF("./urdf/skew-box-button.urdf",
@@ -68,15 +68,15 @@ class ClutteredPushGrasp:
 
     def read_debug_parameter(self):
         # read the value of task parameter
-        x = p.readUserDebugParameter(self.xin)
-        y = p.readUserDebugParameter(self.yin)
-        z = p.readUserDebugParameter(self.zin)
-        roll = p.readUserDebugParameter(self.rollId)
-        pitch = p.readUserDebugParameter(self.pitchId)
-        yaw = p.readUserDebugParameter(self.yawId)
+        dx = p.readUserDebugParameter(self.dxin)
+        dy = p.readUserDebugParameter(self.dyin)
+        dz = p.readUserDebugParameter(self.dzin)
+        droll = p.readUserDebugParameter(self.drollId)
+        dpitch = p.readUserDebugParameter(self.dpitchId)
+        dyaw = p.readUserDebugParameter(self.dyawId)
         gripper_opening_length = p.readUserDebugParameter(self.gripper_opening_length_control)
 
-        return x, y, z, roll, pitch, yaw, gripper_opening_length
+        return dx, dy, dz, droll, dpitch, dyaw, gripper_opening_length
 
     def step(self, action, control_method='joint'):
         """
