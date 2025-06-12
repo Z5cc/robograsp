@@ -3,6 +3,7 @@ import math
 from collections import namedtuple
 from gripper import Gripper
 import numpy as np
+import quaternion
 from scipy.spatial.transform import Rotation as R
 
 
@@ -56,38 +57,27 @@ class Robot:
 
     
     def delta_to_absolute(self, delta):
-        dx, dy, dz, droll, dpitch, dyaw = delta
+        dt_ee = np.array(delta[0:3])
+        drot_ee = np.array(p.getQuaternionFromEuler(delta[3:6]))
 
         # 1. get current end-effector pose in world frame
         state_ee = p.getLinkState(self.id, self.eef_id)
-        t_ee = np.array(state_ee[0])  # translation
-        rot_ee = np.array(state_ee[1])  # quaternion (x,y,z,w)
+        t = np.array(state_ee[0])  # translation
+        rot = np.array(state_ee[1])  # quaternion (x,y,z,w)
+        R_w_ee = np.array(p.getMatrixFromQuaternion(rot)).reshape(3, 3)
 
-        # 2. translation
-        R_ee = np.array(p.getMatrixFromQuaternion(rot_ee)).reshape(3, 3)
-        dt_ee = np.array([dx, dy, dz])
-        dt_world = R_ee @ dt_ee
-        t_new = t_ee + dt_world
+        # 2. translation: dt_ee -> t_new
+        dt_w = R_w_ee @ dt_ee
+        t_new = t + dt_w
 
-        # 3. rotation
-        
+        # 3. rotation: drot_ee -> rot_new
+        rot = np.quaternion(*rot)
+        rot_inv = 1/rot
+        drot_ee = np.quaternion(*drot_ee)
+        drot_w = rot * drot_ee * rot_inv
+        rot_new = rot * drot_w
 
-
-        # 3. build delta transformation in local frame
-        
-        delta_rot = R.from_euler('xyz', [droll, dpitch, dyaw]).as_matrix()
-
-        T_delta = np.eye(4)
-        T_delta[:3, :3] = delta_rot
-        T_delta[:3, 3] = delta_trans
-
-        # 4. compute new pose in world frame
-        T_target = T_current @ T_delta
-
-        new_pos = T_target[:3, 3]
-        new_rot = R.from_matrix(T_target[:3, :3]).as_euler('xyz')
-
-        return t_new.tolist() + new_rot.tolist()
+        return t_new.tolist() + [rot_new.x,rot_new.y,rot_new.z,rot_new.w]
     
 
 
@@ -96,9 +86,9 @@ class Robot:
     def move_ee(self, action, control_method):
         assert control_method in ('joint', 'end')
         if control_method == 'end':
-            x, y, z, roll, pitch, yaw = self.delta_to_absolute(action)
-            pos = (x, y, z)
-            orn = p.getQuaternionFromEuler((roll, pitch, yaw))
+            state_new = self.delta_to_absolute(action)
+            pos = state_new[0:3]
+            orn = state_new[3:7]
             joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
                                                        self.arm_ll, self.arm_ul, self.arm_jr, self.arm_rest_poses,
                                                       maxNumIterations=20,jointDamping=self.j_dampings)
