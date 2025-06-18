@@ -40,9 +40,9 @@ class ClutteredPushGrasp:
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
         self.dyin = p.addUserDebugParameter("dy", -0.1, 0.1, 0)
         self.dzin = p.addUserDebugParameter("dz", -0.1, 0.1, 0)
-        self.drollId = p.addUserDebugParameter("droll", -0.1, 0.1, 0)
-        self.dpitchId = p.addUserDebugParameter("dpitch", -0.1, 0.1, 0)
-        self.dyawId = p.addUserDebugParameter("dyaw", -0.1, 0.1, 0)
+        self.drollId = p.addUserDebugParameter("droll", -0.5, 0.5, 0)
+        self.dpitchId = p.addUserDebugParameter("dpitch", -0.5, 0.5, 0)
+        self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
         self.boxID = p.loadURDF("./urdf/skew-box-button.urdf",

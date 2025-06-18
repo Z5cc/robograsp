@@ -57,27 +57,25 @@ class Robot:
 
     
     def delta_to_absolute(self, delta):
-        dt_ee = np.array(delta[0:3])
-        drot_ee = np.array(p.getQuaternionFromEuler(delta[3:6]))
+        dt_EE = np.array(delta[0:3])
+        dr_EE = np.array(p.getQuaternionFromEuler(delta[3:6]))
 
         # 1. get current end-effector pose in world frame
-        state_ee = p.getLinkState(self.id, self.eef_id)
-        t = np.array(state_ee[0])  # translation
-        rot = np.array(state_ee[1])  # quaternion (x,y,z,w)
-        R_w_ee = np.array(p.getMatrixFromQuaternion(rot)).reshape(3, 3)
-
+        state_EE = p.getLinkState(self.id, self.eef_id)
+        t = np.array(state_EE[0])  # translation
+        r = np.array(state_EE[1])  # quaternion (x,y,z,w)
+        
         # 2. translation: dt_ee -> t_new
-        dt_w = R_w_ee @ dt_ee
-        t_new = t + dt_w
+        R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        dt = R_W_EE @ dt_EE
+        t_new = t + dt
 
         # 3. rotation: drot_ee -> rot_new
-        rot = np.quaternion(*rot)
-        rot_inv = 1/rot
-        drot_ee = np.quaternion(*drot_ee)
-        drot_w = rot * drot_ee * rot_inv
-        rot_new = rot * drot_w
+        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
+        dr_EE = np.quaternion(dr_EE[3],dr_EE[0],dr_EE[1],dr_EE[2])
+        r_new = r * dr_EE
 
-        return t_new.tolist() + [rot_new.x,rot_new.y,rot_new.z,rot_new.w]
+        return t_new.tolist() + [r_new.x,r_new.y,r_new.z,r_new.w]
     
 
 
@@ -89,9 +87,13 @@ class Robot:
             state_new = self.delta_to_absolute(action)
             pos = state_new[0:3]
             orn = state_new[3:7]
+            # pos=[0.11,0.01,0.40]
+            # orn=[0.61,0.36,-0.61,0.36]
+            # orn = [0.6087721220543522, 0.3618228101134492, -0.6072546924249086, 0.36017009317679055]
+            # pos = [0.10999467059285488, 0.00977376298389707, 0.40175783367181817]
             joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
-                                                       self.arm_ll, self.arm_ul, self.arm_jr, self.arm_rest_poses,
                                                       maxNumIterations=20,jointDamping=self.j_dampings)
+            print('a')
         elif control_method == 'joint':
             assert len(action) == self.arm_num_dofs
             joint_poses = action
