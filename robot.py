@@ -58,8 +58,8 @@ class Robot:
     def clamp(self,t,r):
         ll_t = [-0.3,-0.15,0.1] #x,y,z
         ul_t = [0.3,0.3,0.3]
-        ll_r = [-np.pi, -np.pi, -np.pi]
-        ul_r = [np.pi, np.pi, np.pi]
+        ll_r = [-3.14, 0, -3.14]
+        ul_r = [3.14, 3.14/2, 0]
         print('t: ',t)
         print('r: ',r)
 
