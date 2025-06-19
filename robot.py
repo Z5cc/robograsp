@@ -55,17 +55,20 @@ class Robot:
 
 
 
-    def limit(t,r):
-        ll_t = []
-        ul_t = []
-        ll_r = [-3.14159265359,,]
-        ul_r = [3.14159265359,,]
+    def clamp(self,t,r):
+        ll_t = [-0.3,-0.15,0.1] #x,y,z
+        ul_t = [0.3,0.3,0.3]
+        ll_r = [-np.pi, -np.pi, -np.pi]
+        ul_r = [np.pi, np.pi, np.pi]
+        print('t: ',t)
+        print('r: ',r)
 
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
         # lets convert r back to intrinsic angles roll, pitch, yaw. then limit that intrinsic angles. then convert back quaternionfromeuler
         r = p.getEulerFromQuaternion(r) # roll(red), pitch(green), yaw(blue)
         r = [max(l, min(x, u)) for x, l, u in zip(r, ll_r, ul_r)]
         r = p.getQuaternionFromEuler(r)
+        r=list(r)
         return t, r
 
 
@@ -96,7 +99,7 @@ class Robot:
         t_new = t_new.tolist()
         r_new = [r_new.x,r_new.y,r_new.z,r_new.w]
 
-        # t_new, r_new = limit(t_new, r_new)
+        t_new, r_new = self.clamp(t_new, r_new)
 
         return t_new + r_new
     
