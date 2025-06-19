@@ -55,10 +55,28 @@ class Robot:
 
 
 
+    def limit(t,r):
+        ll_t = []
+        ul_t = []
+        ll_r = [-3.14159265359,,]
+        ul_r = [3.14159265359,,]
+
+        t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
+        # lets convert r back to intrinsic angles roll, pitch, yaw. then limit that intrinsic angles. then convert back quaternionfromeuler
+        r = p.getEulerFromQuaternion(r) # roll(red), pitch(green), yaw(blue)
+        r = [max(l, min(x, u)) for x, l, u in zip(r, ll_r, ul_r)]
+        r = p.getQuaternionFromEuler(r)
+        return t, r
+
+
+
+        
+
+
     
     def delta_to_absolute(self, delta):
         dt_EE = np.array(delta[0:3])
-        dr_EE = np.array(p.getQuaternionFromEuler(delta[3:6]))
+        dr_EE = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_EE derived from intrinsic euler angles
 
         # 1. get current end-effector pose in world frame
         state_EE = p.getLinkState(self.id, self.eef_id)
@@ -73,9 +91,14 @@ class Robot:
         # 3. rotation: drot_ee -> rot_new
         r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
         dr_EE = np.quaternion(dr_EE[3],dr_EE[0],dr_EE[1],dr_EE[2])
-        r_new = r * dr_EE
+        r_new = r * dr_EE # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
+        
+        t_new = t_new.tolist()
+        r_new = [r_new.x,r_new.y,r_new.z,r_new.w]
 
-        return t_new.tolist() + [r_new.x,r_new.y,r_new.z,r_new.w]
+        # t_new, r_new = limit(t_new, r_new)
+
+        return t_new + r_new
     
 
 
