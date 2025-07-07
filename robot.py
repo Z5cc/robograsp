@@ -55,26 +55,37 @@ class Robot:
 
 
 
-    def clamp(self,t,r):
+    def clamp_t(self,t):
         ll_t = [-0.3,-0.15,0.1] #x,y,z
         ul_t = [0.3,0.3,0.3]
-        ll_r = [-3.14, 0, -3.14]
-        ul_r = [3.14, 3.14/2, 0]
-        print('t: ',t)
-        print('r: ',r)
-
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
-        # lets convert r back to intrinsic angles roll, pitch, yaw. then limit that intrinsic angles. then convert back quaternionfromeuler
-        r = p.getEulerFromQuaternion(r) # roll(red), pitch(green), yaw(blue)
-        r = [max(l, min(x, u)) for x, l, u in zip(r, ll_r, ul_r)]
-        r = p.getQuaternionFromEuler(r)
-        r=list(r)
-        return t, r
+        return t
 
 
-
+    def clamp_r(self,r):
+        # constants
+        x_c = np.array([0,-1,-3])
+        alpha_l = np.pi/4
+        # calculate alpha
+        x = np.array([1,0,0])
+        x_t = r*x*r.conj()
+        dot = np.dot(x_c, x_t)
+        norm_c = np.linalg.norm(x_c)
+        norm_t = np.linalg.norm(x_t)
+        alpha = np.arccos(dot / (norm_c * norm_t))
+    
+        if alpha>alpha_l:
+            # calculate n
+            n = np.cross(x_t,x_c)
+            n = n/np.linalg.norm(n)
+            n_x, n_y, n_z = n[0], n[1], n[2]
+            sin_half = np.sin(alpha/2)
+            cos_half = np.cos(alpha/2)
+            r_back = np.quaternion([cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z])
+            r = r*r_back
+            return r
         
-
+        return r
 
     
     def delta_to_absolute(self, delta):
@@ -85,6 +96,7 @@ class Robot:
         state_EE = p.getLinkState(self.id, self.eef_id)
         t = np.array(state_EE[0])  # translation
         r = np.array(state_EE[1])  # quaternion (x,y,z,w)
+        print('rrr:', p.getEulerFromQuaternion(r))
         
         # 2. translation: dt_ee -> t_new
         R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
@@ -97,10 +109,11 @@ class Robot:
         r_new = r * dr_EE # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
         
         t_new = t_new.tolist()
+
+        t_new = self.clamp_t(t_new)
+        r_new = self.clamp_r(r_new)
+
         r_new = [r_new.x,r_new.y,r_new.z,r_new.w]
-
-        t_new, r_new = self.clamp(t_new, r_new)
-
         return t_new + r_new
     
 
@@ -110,6 +123,7 @@ class Robot:
     def move_ee(self, action, control_method):
         assert control_method in ('joint', 'end')
         if control_method == 'end':
+            print(action)
             state_new = self.delta_to_absolute(action)
             pos = state_new[0:3]
             orn = state_new[3:7]
@@ -119,7 +133,6 @@ class Robot:
             # pos = [0.10999467059285488, 0.00977376298389707, 0.40175783367181817]
             joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
                                                       maxNumIterations=20,jointDamping=self.j_dampings)
-            print('a')
         elif control_method == 'joint':
             assert len(action) == self.arm_num_dofs
             joint_poses = action
