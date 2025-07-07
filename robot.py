@@ -65,7 +65,7 @@ class Robot:
     def clamp_r(self,r):
         # constants
         x_c = np.array([0,-1,-3])
-        alpha_l = np.pi/5
+        alpha_l = np.pi/8
         # calculate alpha
         x_e = np.array([1,0,0])
         q_e = np.quaternion(0,*x_e) # w,x,y,z
@@ -75,17 +75,17 @@ class Robot:
         norm_c = np.linalg.norm(x_c)
         norm_t = np.linalg.norm(x_t)
         alpha = np.arccos(dot / (norm_c * norm_t))
-    
+
         if alpha>alpha_l:
             # calculate n
             n = np.cross(x_t,x_c)
             n = n/np.linalg.norm(n)
             n_x, n_y, n_z = n[0], n[1], n[2]
-            alpha_b = alpha_l - alpha
+            alpha_b = alpha - alpha_l
             sin_half = np.sin(alpha_b/2)
             cos_half = np.cos(alpha_b/2)
             r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
-            r = r*r_back
+            r = r_back*r
             return r
         
         return r
@@ -114,7 +114,7 @@ class Robot:
         t = t.tolist()
 
         t = self.clamp_t(t)
-        # r = self.clamp_r(r)
+        r = self.clamp_r(r)
 
         r = [r.x,r.y,r.z,r.w]
         return t + r
