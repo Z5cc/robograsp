@@ -45,17 +45,7 @@ class ClutteredPushGrasp:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
-        self.boxID = p.loadURDF("./urdf/skew-box-button.urdf",
-                                [0.0, 0.0, 0.0],
-                                # p.getQuaternionFromEuler([0, 1.5706453, 0]),
-                                p.getQuaternionFromEuler([0, 0, 0]),
-                                useFixedBase=True,
-                                flags=p.URDF_MERGE_FIXED_LINKS | p.URDF_USE_SELF_COLLISION)
-
-        # For calculating the reward
-        self.box_opened = False
-        self.btn_pressed = False
-        self.box_closed = False
+        self.objectID = p.loadURDF("./urdf_objects/green_bowl/model.urdf",[0.0, 0.0, 0.0])
 
     def step_simulation(self):
         """
@@ -81,7 +71,6 @@ class ClutteredPushGrasp:
     def step(self, action):
         """
         action: (x, y, z, roll, pitch, yaw, gripper_opening_length) for End Effector Position Control
-                (a1, a2, a3, a4, a5, a6, a7, gripper_opening_length) for Joint Position Control
         """
         self.robot.move_ee(action[:-1])
         self.robot.move_gripper(action[-1])
@@ -90,24 +79,19 @@ class ClutteredPushGrasp:
 
         reward = self.update_reward()
         done = True if reward == 1 else False
-        info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
+        info = 0
+        # info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
         return self.get_observation(), reward, done, info
+
+    def close(self):
+        p.disconnect(self.physicsClient)
+
+
+
+
 
     def update_reward(self):
         reward = 0
-        if not self.box_opened:
-            if p.getJointState(self.boxID, 1)[0] > 1.9:
-                self.box_opened = True
-                print('Box opened!')
-        elif not self.btn_pressed:
-            if p.getJointState(self.boxID, 0)[0] < - 0.02:
-                self.btn_pressed = True
-                print('Btn pressed!')
-        else:
-            if p.getJointState(self.boxID, 1)[0] < 0.1:
-                print('Box closed!')
-                self.box_closed = True
-                reward = 1
         return reward
 
     def get_observation(self):
@@ -121,14 +105,7 @@ class ClutteredPushGrasp:
 
         return obs
 
-    def reset_box(self):
-        p.setJointMotorControl2(self.boxID, 0, p.POSITION_CONTROL, force=1)
-        p.setJointMotorControl2(self.boxID, 1, p.VELOCITY_CONTROL, force=0)
-
     def reset(self):
         self.robot.reset()
-        self.reset_box()
+        # self.reset_object()
         return self.get_observation()
-
-    def close(self):
-        p.disconnect(self.physicsClient)

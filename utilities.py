@@ -20,7 +20,7 @@ class Models:
         return NotImplementedError
 
 
-class YCBModels(Models):
+class Object(Models):
     def __init__(self, root, selected_names: tuple = ()):
         self.obj_files = glob.glob(root)
         self.selected_names = selected_names

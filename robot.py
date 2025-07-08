@@ -63,10 +63,8 @@ class Robot:
 
 
     def clamp_t(self,t,ll_t,ul_t):
-        
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
         return t
-
 
     def clamp_r(self,r,phi,alpha_l):
         # caclulate x_c: x_c is the center vector for the restriction cone regarding alpha_l
