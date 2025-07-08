@@ -27,8 +27,15 @@ class Robot:
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
         self.arm_ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
         self.arm_jr = [u-l for u,l in zip(self.arm_ul,self.arm_ll)]
-        self.arm_rest_poses = [-1.5690622952052096, -1.5446774605904932, 1.343946009733127, -1.3708613585093699,
-                                -1.5707970583733368, 0.0009377758247187636]
+
+        self.ll_t = [-0.3,-0.15,0.1] #x,y,z
+        self.ul_t = [0.3,0.3,0.3]
+
+        self.c = np.array([0.1,0.1,0.3]) # center for starting position of end effector
+        # phi: when taking the z-axis as a vector and rotate it by phi around x, the result is x_c
+        # x_c is the center of the restriction cone. x_c is also used as a starting position for the direction of x for the EE
+        self.phi = (np.pi/180)*160
+        self.alpha_l = (np.pi/180)*35 # alpha_l limits alpha for the restriction cone around x_c
         
         numJoints = p.getNumJoints(self.id)
         self.j_names = []
@@ -55,17 +62,15 @@ class Robot:
 
 
 
-    def clamp_t(self,t):
-        ll_t = [-0.3,-0.15,0.1] #x,y,z
-        ul_t = [0.3,0.3,0.3]
+    def clamp_t(self,t,ll_t,ul_t):
+        
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
         return t
 
 
-    def clamp_r(self,r):
-        # constants
-        x_c = np.array([0,-1,-3])
-        alpha_l = np.pi/8
+    def clamp_r(self,r,phi,alpha_l):
+        # caclulate x_c: x_c is the center vector for the restriction cone regarding alpha_l
+        x_c = np.array([0,-np.sin(phi),np.cos(phi)])
         # calculate alpha
         x_e = np.array([1,0,0])
         q_e = np.quaternion(0,*x_e) # w,x,y,z
@@ -103,7 +108,6 @@ class Robot:
         # 2. translation
         R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
         dt = R_W_EE @ dt_EE
-
         t += dt
 
         # 3. rotation
@@ -113,8 +117,8 @@ class Robot:
         
         t = t.tolist()
 
-        t = self.clamp_t(t)
-        r = self.clamp_r(r)
+        t = self.clamp_t(t,self.ll_t,self.ul_t)
+        r = self.clamp_r(r,self.phi,self.alpha_l)
 
         r = [r.x,r.y,r.z,r.w]
         return t + r
@@ -123,21 +127,12 @@ class Robot:
 
 
 
-    def move_ee(self, action, control_method):
-        assert control_method in ('joint', 'end')
-        if control_method == 'end':
-            state_new = self.delta_to_absolute(action)
-            pos = state_new[0:3]
-            orn = state_new[3:7]
-            # pos=[0.11,0.01,0.40]
-            # orn=[0.61,0.36,-0.61,0.36]
-            # orn = [0.6087721220543522, 0.3618228101134492, -0.6072546924249086, 0.36017009317679055]
-            # pos = [0.10999467059285488, 0.00977376298389707, 0.40175783367181817]
-            joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
-                                                      maxNumIterations=20,jointDamping=self.j_dampings)
-        elif control_method == 'joint':
-            assert len(action) == self.arm_num_dofs
-            joint_poses = action
+    def move_ee(self, action):
+        state_new = self.delta_to_absolute(action)
+        pos = state_new[0:3]
+        orn = state_new[3:7]
+        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
+                                                    jointDamping=self.j_dampings)
         # arm
         for i, joint_id in enumerate(self.arm_controllable_joints):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
@@ -168,7 +163,13 @@ class Robot:
         """
         reset to rest poses
         """
-        for rest_pose, joint_id in zip(self.arm_rest_poses, self.arm_controllable_joints):
+        x_phi = 0
+        y_phi = self.phi - 0.5*np.pi
+        z_phi = -0.5*np.pi
+        orn = p.getQuaternionFromEuler([x_phi,y_phi,z_phi])
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.c, orn,
+                                                    jointDamping=self.j_dampings)
+        for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
 
         # Wait for a few steps

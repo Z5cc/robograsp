@@ -78,15 +78,12 @@ class ClutteredPushGrasp:
 
         return dx, dy, dz, droll, dpitch, dyaw, gripper_opening_length
 
-    def step(self, action, control_method='joint'):
+    def step(self, action):
         """
         action: (x, y, z, roll, pitch, yaw, gripper_opening_length) for End Effector Position Control
                 (a1, a2, a3, a4, a5, a6, a7, gripper_opening_length) for Joint Position Control
-        control_method:  'end' for end effector position control
-                         'joint' for joint position control
         """
-        assert control_method in ('joint', 'end')
-        self.robot.move_ee(action[:-1], control_method)
+        self.robot.move_ee(action[:-1])
         self.robot.move_gripper(action[-1])
         for _ in range(120):  # Wait for a few steps
             self.step_simulation()

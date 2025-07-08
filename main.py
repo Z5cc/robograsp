@@ -27,7 +27,7 @@ def user_control_demo():
     env.reset()
     # env.SIMULATION_STEP_DELAY = 0
     while True:
-        obs, reward, done, info = env.step(env.read_debug_parameter(), 'end')
+        obs, reward, done, info = env.step(env.read_debug_parameter())
         # print(obs, reward, done, info)
 
 
