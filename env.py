@@ -6,7 +6,7 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 
-from utilities import Models, Camera
+from utilities import Object, Camera
 from collections import namedtuple
 from attrdict import AttrDict
 from tqdm import tqdm
@@ -16,11 +16,11 @@ class FailToReachTargetError(RuntimeError):
     pass
 
 
-class ClutteredPushGrasp:
+class Grasping:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, models: Models, camera=None, vis=False) -> None:
+    def __init__(self, robot, object: Object, camera=None, vis=False) -> None:
         self.robot = robot
         self.vis = vis
         if self.vis:
@@ -45,7 +45,7 @@ class ClutteredPushGrasp:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
-        self.objectID = p.loadURDF("./urdf_objects/green_bowl/model.urdf",[0.0, 0.0, 0.0])
+        self.objectID = object.load()
 
     def step_simulation(self):
         """

@@ -7,57 +7,23 @@ import torch
 import cv2
 from scipy import ndimage
 import numpy as np
+from pathlib import Path
+import random
 
 
-class Models:
-    def load_objects(self):
-        raise NotImplementedError
-
-    def __len__(self):
-        raise NotImplementedError
-
-    def __getitem__(self, item):
-        return NotImplementedError
 
 
-class Object(Models):
-    def __init__(self, root, selected_names: tuple = ()):
-        self.obj_files = glob.glob(root)
-        self.selected_names = selected_names
 
-        self.visual_shapes = []
-        self.collision_shapes = []
+class Object:
+    def __init__(self):
+        self.files = ['clear_box','green_cup','green_bowl']
 
-    def load_objects(self):
-        shift = [0, 0, 0]
-        mesh_scale = [1, 1, 1]
-
-        for filename in self.obj_files:
-            # Check selected_names
-            if self.selected_names:
-                in_selected = False
-                for name in self.selected_names:
-                    if name in filename:
-                        in_selected = True
-                if not in_selected:
-                    continue
-            print('Loading %s' % filename)
-            self.collision_shapes.append(
-                p.createCollisionShape(shapeType=p.GEOM_MESH,
-                                       fileName=filename,
-                                       collisionFramePosition=shift,
-                                       meshScale=mesh_scale))
-            self.visual_shapes.append(
-                p.createVisualShape(shapeType=p.GEOM_MESH,
-                                    fileName=filename,
-                                    visualFramePosition=shift,
-                                    meshScale=mesh_scale))
-
-    def __len__(self):
-        return len(self.collision_shapes)
-
-    def __getitem__(self, idx):
-        return self.visual_shapes[idx], self.collision_shapes[idx]
+    def load(self):
+        object = random.choice(self.files)
+        path = Path("urdf_objects") / object / "model.urdf"
+        path = str(path)
+        objectID = p.loadURDF(path,[0.0, 0.0, 0.0])
+        return objectID
 
 
 class Camera:
