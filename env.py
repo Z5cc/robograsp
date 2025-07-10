@@ -26,13 +26,14 @@ class Grasping:
         if self.vis:
             self.p_bar = tqdm(ncols=0, disable=False)
         self.camera = camera
+        self.object = object
 
         # define environment
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         self.planeID = p.loadURDF("plane.urdf")
-
+        self.object.load()
         self.robot.load()
         self.robot.step_simulation = self.step_simulation
 
@@ -45,7 +46,7 @@ class Grasping:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
-        self.objectID = object.load()
+        
 
     def step_simulation(self):
         """
@@ -107,5 +108,5 @@ class Grasping:
 
     def reset(self):
         self.robot.reset()
-        # self.reset_object()
+        self.object.reset()
         return self.get_observation()

@@ -22,8 +22,13 @@ class Object:
         object = random.choice(self.files)
         path = Path("urdf_objects") / object / "model.urdf"
         path = str(path)
-        objectID = p.loadURDF(path,[0.0, 0.0, 0.0])
-        return objectID
+        self.id = p.loadURDF(path,[0.0, 0.0, 0.0])
+    
+    def reset(self):
+        p.removeBody(self.id)
+        self.load()
+
+
 
 
 class Camera:
