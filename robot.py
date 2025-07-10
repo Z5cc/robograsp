@@ -15,10 +15,6 @@ class Robot:
         self.base_ori = p.getQuaternionFromEuler(ori)
 
     def load(self):
-        self.__init_robot__()
-        self.__init_gripper__()
-
-    def __init_robot__(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.eef_id = 19 # link index, not joint index
@@ -55,12 +51,52 @@ class Robot:
                 p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
-
         
-    def __init_gripper__(self):
         self.gripper = Gripper(self.id, self.j_names, self.j_maxForce, self.j_maxVelocity)
+        
+
+    
 
 
+
+
+    def move_ee(self, action):
+        state_new = self.delta_to_absolute(action)
+        pos = state_new[0:3]
+        orn = state_new[3:7]
+        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
+                                                    jointDamping=self.j_dampings)
+        # arm
+        for i, joint_id in enumerate(self.arm_controllable_joints):
+            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
+                                    force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
+            
+    def delta_to_absolute(self, delta):
+        dt_EE = np.array(delta[0:3])
+        dr_EE = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_EE derived from intrinsic euler angles
+
+        # 1. get current end-effector pose in world frame
+        state_EE = p.getLinkState(self.id, self.eef_id)
+        t = np.array(state_EE[0])  # translation
+        r = np.array(state_EE[1])  # quaternion (x,y,z,w)
+        
+        # 2. translation
+        R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        dt = R_W_EE @ dt_EE
+        t += dt
+
+        # 3. rotation
+        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
+        dr_EE = np.quaternion(dr_EE[3],dr_EE[0],dr_EE[1],dr_EE[2])
+        r = r * dr_EE # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
+        
+        t = t.tolist()
+
+        t = self.clamp_t(t,self.ll_t,self.ul_t)
+        r = self.clamp_r(r,self.phi,self.alpha_l)
+
+        r = [r.x,r.y,r.z,r.w]
+        return t + r
 
     def clamp_t(self,t,ll_t,ul_t):
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
@@ -94,48 +130,11 @@ class Robot:
         return r
 
     
-    def delta_to_absolute(self, delta):
-        dt_EE = np.array(delta[0:3])
-        dr_EE = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_EE derived from intrinsic euler angles
-
-        # 1. get current end-effector pose in world frame
-        state_EE = p.getLinkState(self.id, self.eef_id)
-        t = np.array(state_EE[0])  # translation
-        r = np.array(state_EE[1])  # quaternion (x,y,z,w)
-        
-        # 2. translation
-        R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        dt = R_W_EE @ dt_EE
-        t += dt
-
-        # 3. rotation
-        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
-        dr_EE = np.quaternion(dr_EE[3],dr_EE[0],dr_EE[1],dr_EE[2])
-        r = r * dr_EE # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
-        
-        t = t.tolist()
-
-        t = self.clamp_t(t,self.ll_t,self.ul_t)
-        r = self.clamp_r(r,self.phi,self.alpha_l)
-
-        r = [r.x,r.y,r.z,r.w]
-        return t + r
     
 
 
 
 
-    def move_ee(self, action):
-        state_new = self.delta_to_absolute(action)
-        pos = state_new[0:3]
-        orn = state_new[3:7]
-        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
-                                                    jointDamping=self.j_dampings)
-        # arm
-        for i, joint_id in enumerate(self.arm_controllable_joints):
-            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
-                                    force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
-            
     def move_gripper(self, open_length):
         self.gripper.move(open_length)
 
@@ -151,10 +150,6 @@ class Robot:
 
 
     def reset(self):
-        self.reset_arm()
-        self.gripper.reset()
-
-    def reset_arm(self):
         """
         reset to rest poses
         """
@@ -166,18 +161,15 @@ class Robot:
                                                     jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
-
         # Wait for a few steps
         for _ in range(10):
             self.step_simulation()
 
+        # also reset gripper
+        self.gripper.reset()
+
     def step_simulation(self):
         raise RuntimeError('`step_simulation` method of RobotBase Class should be hooked by the environment.')
-
-
-
-
-
 
     def get_joint_obs(self):
         positions = []

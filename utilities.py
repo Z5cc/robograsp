@@ -15,14 +15,15 @@ import random
 
 
 class Object:
-    def __init__(self):
+    def __init__(self, pos):
         self.files = ['clear_box','green_cup','green_bowl']
+        self.pos = pos
 
     def load(self):
         object = random.choice(self.files)
         path = Path("urdf_objects") / object / "model.urdf"
         path = str(path)
-        self.id = p.loadURDF(path,[0.0, 0.0, 0.0])
+        self.id = p.loadURDF(path,self.pos)
     
     def reset(self):
         p.removeBody(self.id)

@@ -12,7 +12,7 @@ import math
 
 
 def user_control_demo():
-    object = Object()
+    object = Object((0,0,0))
     camera = Camera((1, 1, 1),
                     (0, 0, 0),
                     (0, 0, 1),

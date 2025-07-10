@@ -20,13 +20,13 @@ class Grasping:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object: Object, camera=None, vis=False) -> None:
-        self.robot = robot
+    def __init__(self, robot, object, camera=None, vis=False) -> None:
         self.vis = vis
         if self.vis:
             self.p_bar = tqdm(ncols=0, disable=False)
         self.camera = camera
         self.object = object
+        self.robot = robot
 
         # define environment
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
