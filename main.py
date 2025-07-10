@@ -12,8 +12,18 @@ import math
 
 
 def user_control_demo():
-    pos = (0, 0.5, 0)
-    orn = (0, 0, 0)
+    obj_pos = (0,0,0)
+
+    cam_pos = (0.6, 0.6, 0.6)
+    cam_tar = (0, 0, 0)
+    cam_up_vector = (0, 0, 1)
+    near = 0.1 # 0.01 means anything closer than 1 cm is invisible
+    far = 5 # anything further than this is also invisible
+    size = (320, 320)
+    fov = 40
+
+    rob_pos = (0, 0.5, 0)
+    rob_orn = (0, 0, 0)
     ll_t = [-0.3,-0.15,0.1] #x,y,z
     ul_t = [0.3,0.3,0.3]
     c = np.array([0.1,0.1,0.3]) # center for starting position of end effector
@@ -24,19 +34,21 @@ def user_control_demo():
 
 
 
+    object = Object(obj_pos)
+    camera = Camera(cam_pos, cam_tar, cam_up_vector, near, far, size, fov)
+    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, c, phi, alpha_l)
 
-    object = Object((0,0,0))
-    camera = Camera((1, 1, 1),
-                    (0, 0, 0),
-                    (0, 0, 1),
-                    0.1, 5, (320, 320), 40)
-    camera = None
-    robot = Robot(pos,orn,ll_t,ul_t,c,phi,alpha_l)
+
 
     env = Grasping(robot, object, camera, vis=True)
     env.reset()
     while True:
         obs, reward, done, info = env.step(env.read_debug_parameter())
+
+
+
+
+
 
 
 if __name__ == '__main__':

@@ -104,8 +104,8 @@ class Grasping:
             obs.update(dict(rgb=rgb, depth=depth, seg=seg))
         else:
             assert self.camera is None
+            
         obs.update(self.robot.get_joint_obs())
-
         return obs
     
     def update_reward(self):
