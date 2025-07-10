@@ -1,4 +1,3 @@
 next steps:
-a) improve load logic
 b) get depth camera to work
 c) rgb-d object segmentation: - performance optimization, do stuff only if object moved....

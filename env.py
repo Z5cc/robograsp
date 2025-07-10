@@ -28,7 +28,7 @@ class Grasping:
         self.object = object
         self.robot = robot
 
-        # define environment
+        # load
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
@@ -46,17 +46,6 @@ class Grasping:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
-        
-
-    def step_simulation(self):
-        """
-        Hook p.stepSimulation()
-        """
-        p.stepSimulation()
-        if self.vis:
-            time.sleep(self.SIMULATION_STEP_DELAY)
-            self.p_bar.update(1)
-
     def read_debug_parameter(self):
         # read the value of task parameter
         dx = p.readUserDebugParameter(self.dxin)
@@ -69,6 +58,22 @@ class Grasping:
 
         return dx, dy, dz, droll, dpitch, dyaw, gripper_opening_length
 
+        
+
+
+
+
+
+
+    def step_simulation(self):
+        """
+        Hook p.stepSimulation()
+        """
+        p.stepSimulation()
+        if self.vis:
+            time.sleep(self.SIMULATION_STEP_DELAY)
+            self.p_bar.update(1)
+    
     def step(self, action):
         """
         action: (x, y, z, roll, pitch, yaw, gripper_opening_length) for End Effector Position Control
@@ -84,16 +89,13 @@ class Grasping:
         # info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
         return self.get_observation(), reward, done, info
 
-    def close(self):
-        p.disconnect(self.physicsClient)
 
 
 
 
 
-    def update_reward(self):
-        reward = 0
-        return reward
+
+
 
     def get_observation(self):
         obs = dict()
@@ -105,8 +107,21 @@ class Grasping:
         obs.update(self.robot.get_joint_obs())
 
         return obs
+    
+    def update_reward(self):
+        reward = 0
+        return reward
+
+
+
+
+
+
 
     def reset(self):
         self.robot.reset()
         self.object.reset()
         return self.get_observation()
+
+    def close(self):
+        p.disconnect(self.physicsClient)
