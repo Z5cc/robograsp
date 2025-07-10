@@ -16,12 +16,12 @@ class Robot:
 
     def load(self):
         self.__init_robot__()
-        # self.__init_gripper__()
+        self.__init_gripper__()
 
     def __init_robot__(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        self.eef_id = 8 # link index, not joint index
+        self.eef_id = 19 # link index, not joint index
         
         self.arm_num_dofs = 6
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
@@ -137,16 +137,13 @@ class Robot:
                                     force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
             
     def move_gripper(self, open_length):
-        # self.gripper.move(open_length)
-        pass
+        self.gripper.move(open_length)
 
     def open_gripper(self):
-        # self.gripper.open()
-        pass
+        self.gripper.open()
 
     def close_gripper(self):
-        # self.gipper.close()
-        pass
+        self.gripper.close()
 
 
 
@@ -155,7 +152,7 @@ class Robot:
 
     def reset(self):
         self.reset_arm()
-        # self.gripper.reset()
+        self.gripper.reset()
 
     def reset_arm(self):
         """

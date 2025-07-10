@@ -1,0 +1,4 @@
+next steps:
+a) get gripper to work
+b) get depth camera to work
+c) rgb-d object segmentation: - performance optimization, do stuff only if object moved....
