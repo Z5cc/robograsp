@@ -10,29 +10,25 @@ from scipy.spatial.transform import Rotation as R
 
 class Robot:
 
-    def __init__(self, pos, ori):
+    def __init__(self, pos, ori, ll_t, ul_t, c, phi, alpha_l):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
+        
+        self.ll_t = ll_t
+        self.ul_t = ul_t
+        self.c = c
+        self.phi = phi
+        self.alpha_l = alpha_l
 
     def load(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        self.eef_id = 19 # link index, not joint index
         
         self.arm_num_dofs = 6
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
         self.arm_ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
         self.arm_jr = [u-l for u,l in zip(self.arm_ul,self.arm_ll)]
 
-        self.ll_t = [-0.3,-0.15,0.1] #x,y,z
-        self.ul_t = [0.3,0.3,0.3]
-
-        self.c = np.array([0.1,0.1,0.3]) # center for starting position of end effector
-        # phi: when taking the z-axis as a vector and rotate it by phi around x, the result is x_c
-        # x_c is the center of the restriction cone. x_c is also used as a starting position for the direction of x for the EE
-        self.phi = (np.pi/180)*160
-        self.alpha_l = (np.pi/180)*35 # alpha_l limits alpha for the restriction cone around x_c
-        
         numJoints = p.getNumJoints(self.id)
         self.j_names = []
         self.j_maxForce = []
@@ -41,14 +37,17 @@ class Robot:
         self.controllable_joints = []
         for i in range(numJoints):
             info = p.getJointInfo(self.id, i)
-            self.j_names.append(info[1].decode("utf-8"))
-            self.j_maxForce.append(info[10])
-            self.j_maxVelocity.append(info[11])
+            name = info[1].decode("utf-8")
             jointType = info[2] # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
             controllable = (jointType != p.JOINT_FIXED)
+            self.j_names.append(name)
+            self.j_maxForce.append(info[10])
+            self.j_maxVelocity.append(info[11])
             if controllable:
                 self.controllable_joints.append(i)
                 p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
+            if name == 'ee_tcp_joint':
+                self.eef_id = i # link index, not joint index. however the joint index i will have same value as link index
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
         
