@@ -14,7 +14,7 @@ import math
 def user_control_demo():
     obj_pos = (0,0,0)
 
-    cam_pos = (0.6, 0.6, 0.6)
+    cam_pos = (0.4, 0.4, 0.4)
     cam_tar = (0, 0, 0)
     cam_up_vector = (0, 0, 1)
     near = 0.1 # 0.01 means anything closer than 1 cm is invisible
