@@ -4,9 +4,9 @@ import numpy as np
 import pybullet as p
 
 from tqdm import tqdm
-from env import Grasping
-from robot import Robot
-from utilities import Object, Camera
+from Env import Env
+from Robot import Robot
+from Utilities import Object, Camera
 import time
 import math
 
@@ -14,7 +14,7 @@ import math
 def user_control_demo():
     obj_pos = (0,0,0)
 
-    cam_pos = (0.4, 0.4, 0.4)
+    cam_pos = (0.2, 0.2, 0.2)
     cam_tar = (0, 0, 0)
     cam_up_vector = (0, 0, 1)
     near = 0.1 # 0.01 means anything closer than 1 cm is invisible
@@ -40,7 +40,7 @@ def user_control_demo():
 
 
 
-    env = Grasping(robot, object, camera, vis=True)
+    env = Env(robot, object, camera, vis=True)
     env.reset()
     while True:
         obs, reward, done, info = env.step(env.read_debug_parameter())
@@ -51,5 +51,5 @@ def user_control_demo():
 
 
 
-if __name__ == '__main__':
-    user_control_demo()
+
+user_control_demo()

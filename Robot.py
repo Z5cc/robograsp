@@ -1,7 +1,7 @@
 import pybullet as p
 import math
 from collections import namedtuple
-from gripper import Gripper
+from Gripper import Gripper
 import numpy as np
 import quaternion
 from scipy.spatial.transform import Rotation as R

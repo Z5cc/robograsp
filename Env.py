@@ -6,7 +6,7 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 
-from utilities import Object, Camera
+from Utilities import Object, Camera
 from collections import namedtuple
 from attrdict import AttrDict
 from tqdm import tqdm
@@ -16,7 +16,7 @@ class FailToReachTargetError(RuntimeError):
     pass
 
 
-class Grasping:
+class Env:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
