@@ -1,6 +1,10 @@
 from collections import namedtuple, deque
-from random import random
+import random
+import torch
+import numpy as np
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 
 
@@ -42,3 +46,4 @@ class DQN(nn.Module):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)
+    

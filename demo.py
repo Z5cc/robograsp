@@ -19,7 +19,7 @@ def user_control_demo():
     cam_up_vector = (0, 0, 1)
     near = 0.1 # 0.01 means anything closer than 1 cm is invisible
     far = 5 # anything further than this is also invisible
-    size = (320, 320)
+    size = (48, 48)
     fov = 40
 
     rob_pos = (0, 0.5, 0)
