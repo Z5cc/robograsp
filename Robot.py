@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, cone_tar, alpha_l):
+    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, cone_tar, cone_phi):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
@@ -19,7 +19,7 @@ class Robot:
         self.ee_center = ee_center
         self.ee_tar = ee_tar
         self.cone_tar = cone_tar
-        self.alpha_l = alpha_l
+        self.cone_phi = cone_phi
 
     def load(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
@@ -93,7 +93,7 @@ class Robot:
         t = t.tolist()
 
         t = self.clamp_t(t,self.ll_t,self.ul_t)
-        r = self.clamp_r(r,self.ee_center,self.cone_tar,self.alpha_l)
+        r = self.clamp_r(r,self.ee_center,self.cone_tar,self.cone_phi)
 
         r = [r.x,r.y,r.z,r.w]
         return t + r
@@ -102,8 +102,8 @@ class Robot:
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
         return t
 
-    def clamp_r(self,r,ee_center,cone_tar,alpha_l):
-        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding alpha_l
+    def clamp_r(self,r,ee_center,cone_tar,cone_phi):
+        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding cone_phi
         cone_vec = cone_tar - ee_center
         cone_vec = cone_vec / np.linalg.norm(cone_vec)
         # calculate alpha
@@ -114,12 +114,12 @@ class Robot:
         x_t = x_t / np.linalg.norm(x_t)
         alpha = np.arccos(np.dot(cone_vec, x_t))
 
-        if alpha>alpha_l:
+        if alpha>cone_phi:
             # calculate n
             n = np.cross(x_t,cone_vec)
             n = n/np.linalg.norm(n)
             n_x, n_y, n_z = n[0], n[1], n[2]
-            alpha_b = alpha - alpha_l
+            alpha_b = alpha - cone_phi
             sin_half = np.sin(alpha_b/2)
             cos_half = np.cos(alpha_b/2)
             r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
