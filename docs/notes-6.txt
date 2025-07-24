@@ -1,3 +1,10 @@
 next steps:
 b) get depth camera to work
 c) rgb-d object segmentation: - performance optimization, do stuff only if object moved....
+
+
+action space with not too many discrete actions:
+with every action we also move in +x directoin, so there needs to be one extra action to move into -x direction:
+action space:
+... and that big -x could be seen as regrasp
++alpha,-alpha,+beta,-beta,+gamma,-gamma,+y,-y,+z,-z,+x,-x, grasp
