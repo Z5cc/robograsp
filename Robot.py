@@ -10,13 +10,15 @@ from scipy.spatial.transform import Rotation as R
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, c, phi, alpha_l):
+    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, cone_tar, phi, alpha_l):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
         self.ll_t = ll_t
         self.ul_t = ul_t
-        self.c = c
+        self.ee_center = ee_center
+        self.ee_tar = ee_tar
+        self.cone_tar = cone_tar
         self.phi = phi
         self.alpha_l = alpha_l
 
@@ -152,11 +154,21 @@ class Robot:
         """
         reset to rest poses
         """
-        x_phi = 0
-        y_phi = self.phi - 0.5*np.pi
-        z_phi = -0.5*np.pi
-        orn = p.getQuaternionFromEuler([x_phi,y_phi,z_phi])
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.c, orn,
+        ee_vec = self.ee_tar - self.ee_center
+        ee_vec_p = np.array([ee_vec[0], ee_vec[1], 0])
+        x = np.array([1,0,0])
+        ee_vec_norm = np.linalg.norm(ee_vec)
+        ee_vec_p_norm = np.linalg.norm(ee_vec_p)
+        ee_vec = ee_vec / ee_vec_norm
+        ee_vec_p = ee_vec_p / ee_vec_p_norm
+
+        roll = 0
+        pitch = np.arccos(np.dot(ee_vec, ee_vec_p))
+        yaw = np.arccos(np.dot(x, ee_vec_p))
+        pitch = -pitch if ee_vec[2] >= 0 else pitch
+        yaw = yaw if ee_vec_p[1] >= 0 else -yaw
+        orn = p.getQuaternionFromEuler([roll,pitch,yaw])
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn,
                                                     jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
