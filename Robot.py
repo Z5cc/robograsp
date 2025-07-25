@@ -79,6 +79,7 @@ class Robot:
         state_EE = p.getLinkState(self.id, self.eef_id)
         t = np.array(state_EE[0])  # translation
         r = np.array(state_EE[1])  # quaternion (x,y,z,w)
+        print(p.getEulerFromQuaternion(r))
         
         # 2. translation
         R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
@@ -153,19 +154,12 @@ class Robot:
         reset to rest poses
         """
         ee_vec = self.ee_tar - self.ee_center
-        ee_vec_p = np.array([ee_vec[0], ee_vec[1], 0])
-        x = np.array([1,0,0])
-        ee_vec_norm = np.linalg.norm(ee_vec)
-        ee_vec_p_norm = np.linalg.norm(ee_vec_p)
-        ee_vec = ee_vec / ee_vec_norm
-        ee_vec_p = ee_vec_p / ee_vec_p_norm
+        ee_vec = ee_vec / np.linalg.norm(ee_vec)
+   
+        pitch = -np.arctan2(ee_vec[2], np.linalg.norm(ee_vec[:2])) # pitch = arctan2(z, sqrt(x² + y²))
+        yaw = np.arctan2(ee_vec[1], ee_vec[0])                     # yaw = arctan2(y, x)
 
-        roll = 0
-        pitch = np.arccos(np.dot(ee_vec, ee_vec_p))
-        yaw = np.arccos(np.dot(x, ee_vec_p))
-        pitch = -pitch if ee_vec[2] >= 0 else pitch
-        yaw = yaw if ee_vec_p[1] >= 0 else -yaw
-        orn = p.getQuaternionFromEuler([roll,pitch,yaw])
+        orn = p.getQuaternionFromEuler([0,pitch,yaw])
         arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn,
                                                     jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
