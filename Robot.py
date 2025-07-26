@@ -155,11 +155,16 @@ class Robot:
         """
         ee_vec = self.ee_tar - self.ee_center
         ee_vec = ee_vec / np.linalg.norm(ee_vec)
-   
-        pitch = -np.arctan2(ee_vec[2], np.linalg.norm(ee_vec[:2])) # pitch = arctan2(z, sqrt(x² + y²))
-        yaw = np.arctan2(ee_vec[1], ee_vec[0])                     # yaw = arctan2(y, x)
+        up = np.array([0,0,1])
+        z_new = up - np.dot(up,ee_vec)*ee_vec  # z_new = up - proj. of up on ee_vec
+        z_new = z_new / np.linalg.norm(z_new)
+        y_new = np.cross(z_new,ee_vec)
+        y_new = y_new / np.linalg.norm(y_new)
+        R_new = np.column_stack((ee_vec,y_new,z_new))
+        R_new = R.from_matrix(R_new)
 
-        orn = p.getQuaternionFromEuler([0,pitch,yaw])
+        orn = R_new.as_quat().tolist()
+
         arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn,
                                                     jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
