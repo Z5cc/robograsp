@@ -1,16 +1,15 @@
 import pybullet as p
-import math
-from collections import namedtuple
-from Gripper import Gripper
 import numpy as np
 import quaternion
 from scipy.spatial.transform import Rotation as R
+
+from Gripper import Gripper
 
 
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, cone_tar, cone_phi):
+    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
@@ -18,6 +17,7 @@ class Robot:
         self.ul_t = ul_t
         self.ee_center = ee_center
         self.ee_tar = ee_tar
+        self.ee_up = ee_up
         self.cone_tar = cone_tar
         self.cone_phi = cone_phi
 
@@ -155,8 +155,7 @@ class Robot:
         """
         ee_vec = self.ee_tar - self.ee_center
         ee_vec = ee_vec / np.linalg.norm(ee_vec)
-        up = np.array([0,0,1])
-        z_new = up - np.dot(up,ee_vec)*ee_vec  # z_new = up - proj. of up on ee_vec
+        z_new = self.ee_up - np.dot(self.ee_up,ee_vec)*ee_vec  # z_new = up - proj. of up on ee_vec
         z_new = z_new / np.linalg.norm(z_new)
         y_new = np.cross(z_new,ee_vec)
         y_new = y_new / np.linalg.norm(y_new)

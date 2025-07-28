@@ -33,13 +33,13 @@ class Object:
 
 
 class Camera:
-    def __init__(self, cam_pos, cam_tar, cam_up_vector, near, far, size, fov):
+    def __init__(self, cam_pos, cam_tar, cam_up, near, far, size, fov):
         self.width, self.height = size
         self.near, self.far = near, far
         self.fov = fov
 
         aspect = self.width / self.height
-        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, cam_up_vector)
+        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, cam_up)
         self.projection_matrix = p.computeProjectionMatrixFOV(self.fov, aspect, self.near, self.far)
 
         _view_matrix = np.array(self.view_matrix).reshape((4, 4), order='F')
