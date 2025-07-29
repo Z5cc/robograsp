@@ -38,7 +38,7 @@ def user_control_demo():
     env = Env(robot, object, camera, vis=True)
     env.reset()
     while True:
-        obs, reward, done, info = env.step(env.read_debug_parameter())
+        env.step_move(env.read_debug_parameter())
 
 
 

@@ -60,8 +60,8 @@ class Robot:
 
 
 
-    def move_ee(self, action):
-        state_new = self.delta_to_absolute(action)
+    def move_ee(self, delta):
+        state_new = self.delta_to_absolute(delta)
         pos = state_new[0:3]
         orn = state_new[3:7]
         joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
@@ -79,7 +79,6 @@ class Robot:
         state_EE = p.getLinkState(self.id, self.eef_id)
         t = np.array(state_EE[0])  # translation
         r = np.array(state_EE[1])  # quaternion (x,y,z,w)
-        print(p.getEulerFromQuaternion(r))
         
         # 2. translation
         R_W_EE = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)

@@ -12,8 +12,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from DQN import Transition, ReplayMemory, DQN
+from Env import Env
 
-env = gym.make("CartPole-v1")
+env = Env()
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -57,7 +58,7 @@ LR = 3e-4
 
 
 # Get number of actions from gym action space
-n_actions = env.action_space.n
+n_actions = env.action_space_size
 # Get the number of state observations
 state, info = env.reset()
 n_observations = len(state)
@@ -86,7 +87,7 @@ def select_action(state):
             # found, so we pick action with the larger expected reward.
             return policy_net(state).max(1).indices.view(1, 1)
     else:
-        return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
 
 episode_durations = []

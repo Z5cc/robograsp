@@ -46,6 +46,8 @@ class Env:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
+        self.action_space_size = 7
+
     def read_debug_parameter(self):
         # read the value of task parameter
         dx = p.readUserDebugParameter(self.dxin)
@@ -65,29 +67,51 @@ class Env:
 
 
 
+    def step(self, action):
+        gr_l = 0.05
+        dx = +0.005
+        dy,dz = 0,0
+        droll,dpitch,dyaw=0,0,0
+
+        if action==0: # grasp
+            gr_l = 0
+            dx = -0.5
+        elif action==1: # approach
+            dx = 0.015
+        elif action==2: # regrasp
+            dx = -0.06
+        elif action==3: # adjust while moving little to object
+            dy = 0.01
+        elif action==4:
+            dy = -0.01
+        elif action==5:
+            dz = +0.01
+        elif action==6:
+            dz = -0.01
+
+        delta = [dx,dy,dz,droll,dpitch,dyaw,gr_l]
+        obs = self.step_move(delta)
+        reward = self.update_reward()
+        done = True if reward == 1 else False
+        info = 0
+        # info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
+        return obs, reward, done, info
+
+
+    def step_move(self, delta):
+        self.robot.move_gripper(delta[-1])
+        self.robot.move_ee(delta[:-1]) # delta: dx,dy,dz,droll,dpitch,dyaw,gripper_opening_length
+        for _ in range(120):  # Wait for a few steps
+            self.step_simulation()
+        return self.get_observation()
+
+
     def step_simulation(self):
-        """
-        Hook p.stepSimulation()
-        """
         p.stepSimulation()
         if self.vis:
             time.sleep(self.SIMULATION_STEP_DELAY)
             self.p_bar.update(1)
     
-    def step(self, action):
-        """
-        action: (x, y, z, roll, pitch, yaw, gripper_opening_length) for End Effector Position Control
-        """
-        self.robot.move_ee(action[:-1])
-        self.robot.move_gripper(action[-1])
-        for _ in range(120):  # Wait for a few steps
-            self.step_simulation()
-
-        reward = self.update_reward()
-        done = True if reward == 1 else False
-        info = 0
-        # info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
-        return self.get_observation(), reward, done, info
 
 
 
