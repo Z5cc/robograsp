@@ -7,6 +7,7 @@ import pybullet as p
 import pybullet_data
 
 from Utilities import Object, Camera
+from Robot import Robot
 from collections import namedtuple
 from attrdict import AttrDict
 from tqdm import tqdm
@@ -47,6 +48,8 @@ class Env:
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
         self.action_space_size = 7
+        self.steps = 0
+        self.max_steps = 500
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -90,12 +93,15 @@ class Env:
             dz = -0.01
 
         delta = [dx,dy,dz,droll,dpitch,dyaw,gr_l]
-        obs = self.step_move(delta)
-        reward = self.update_reward()
-        done = True if reward == 1 else False
-        info = 0
-        # info = dict(box_opened=self.box_opened, btn_pressed=self.btn_pressed, box_closed=self.box_closed)
-        return obs, reward, done, info
+        self.step_move(delta)
+        obs = self.get_observation()
+        reward = self.get_reward()
+
+        terminated = True if reward == 1 else False
+        info = None
+        self.steps += 1
+        truncated = self.steps >= self.max_steps
+        return obs, reward, terminated, truncated, info
 
 
     def step_move(self, delta):
@@ -103,7 +109,6 @@ class Env:
         self.robot.move_ee(delta[:-1]) # delta: dx,dy,dz,droll,dpitch,dyaw,gripper_opening_length
         for _ in range(120):  # Wait for a few steps
             self.step_simulation()
-        return self.get_observation()
 
 
     def step_simulation(self):
@@ -122,17 +127,13 @@ class Env:
 
 
     def get_observation(self):
-        obs = dict()
         if isinstance(self.camera, Camera):
             rgb, depth, seg = self.camera.shot()
-            obs.update(dict(rgb=rgb, depth=depth, seg=seg))
         else:
-            assert self.camera is None
-            
-        obs.update(self.robot.get_joint_obs())
-        return obs
+            assert self.camera is None            
+        return depth
     
-    def update_reward(self):
+    def get_reward(self):
         reward = 0
         return reward
 
@@ -145,7 +146,53 @@ class Env:
     def reset(self):
         self.robot.reset()
         self.object.reset()
-        return self.get_observation()
+        self.steps = 0
+        info = None
+        return self.get_observation(), info
 
     def close(self):
         p.disconnect(self.physicsClient)
+
+
+
+
+
+
+
+
+
+    
+
+
+def make_env():
+    obj_pos = (0,0,0)
+
+    cam_pos = (0.2, 0.2, 0.15)
+    cam_tar = obj_pos
+    cam_up = (0, 0, 1)
+    near = 0.1 # 0.01 means anything closer than 1 cm is invisible
+    far = 5 # anything further than this is also invisible
+    size = (48, 48)
+    fov = 40
+
+    rob_pos = (0, 0.5, 0)
+    rob_orn = (0, 0, 0)
+    ll_t = [-0.25,-0.15,0] # x,y,z
+    ul_t = [0.25,0.25,0.25]
+    ee_center = np.array([0,0.05,0.25]) # center for starting position of end effector
+    ee_tar = np.array(obj_pos) # target position for end effector
+    ee_up = np.array([0,-1,0])
+    cone_tar = np.array(obj_pos) # target position for the restriction cone
+    cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
+
+
+
+    object = Object(obj_pos)
+    camera = Camera(cam_pos, cam_tar, cam_up, near, far, size, fov)
+    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi)
+
+
+
+    env = Env(robot, object, camera, vis=True)
+    env.reset()
+    return env

@@ -12,9 +12,15 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from DQN import Transition, ReplayMemory, DQN
-from Env import Env
+from Env import make_env
 
-env = Env()
+
+
+
+
+
+
+env = make_env()
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -141,6 +147,8 @@ def optimize_model():
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
+
+
     # Compute Q(s_t, a)
     state_action_values = policy_net(state_batch).gather(1, action_batch)
 
@@ -180,11 +188,11 @@ else:
 for i_episode in range(num_episodes):
     # Initialize the environment and get its state
     state, info = env.reset()
-    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
     for t in count():
         # 1. RUN ENVIRONMENT
         action = select_action(state)
-        observation, reward, terminated, truncated, _ = env.step(action.item())
+        observation, reward, terminated, truncated, info = env.step(action.item())
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
@@ -192,7 +200,7 @@ for i_episode in range(num_episodes):
             next_state = None
         else:
             # already a batch of size 1, because select_action requires also batch format for call of policy_net even it is batch size 1
-            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0) 
+            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
 
         # Store the transition in memory
         memory.push(state, action, next_state, reward)
