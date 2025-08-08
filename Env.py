@@ -134,8 +134,9 @@ class Env:
         return depth
     
     def get_reward(self):
-        reward = 0
-        return reward
+        lo, hi = p.getAABB(self.object.id)
+        lowest_point_z = lo[2]
+        return 1 if lowest_point_z>0.05 else 0
 
 
 
