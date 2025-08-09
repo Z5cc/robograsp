@@ -67,10 +67,9 @@ LR = 3e-4
 n_actions = env.action_space_size
 # Get the number of state observations
 state, info = env.reset()
-n_observations = len(state)
 
-policy_net = DQN(n_observations, n_actions).to(device)
-target_net = DQN(n_observations, n_actions).to(device)
+policy_net = DQN(n_actions).to(device)
+target_net = DQN(n_actions).to(device)
 target_net.load_state_dict(policy_net.state_dict())
 
 optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)

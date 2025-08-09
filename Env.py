@@ -106,6 +106,9 @@ class Env:
 
     def step_move(self, delta):
         self.robot.move_gripper(delta[-1])
+        if delta[-1]==0:
+            for _ in range(120):  # Wait for a few steps
+                self.step_simulation()
         self.robot.move_ee(delta[:-1]) # delta: dx,dy,dz,droll,dpitch,dyaw,gripper_opening_length
         for _ in range(120):  # Wait for a few steps
             self.step_simulation()
