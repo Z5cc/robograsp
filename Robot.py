@@ -172,16 +172,27 @@ class Robot:
 
         orn = R_new.as_quat().tolist()
 
+        # 1. deactivate motors first to avoid driving back to old position after p.resetJointState
+        for joint_id in self.arm_controllable_joints:
+            p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
+
+        # 2. p.resetJointState
         arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn,
                                                     jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
-        # Wait for a few steps
-        for _ in range(10):
-            self.step_simulation()
 
-        # also reset gripper
+        # 3. drive motors to reseted joint states to hold new position
+        for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
+            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, rest_pose,
+                            force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
+
+        # drive gripper to default open position
         self.gripper.reset()
+
+        # 4. let world settle
+        for _ in range(120):
+            self.step_simulation()
 
     def step_simulation(self):
         raise RuntimeError('`step_simulation` method of RobotBase Class should be hooked by the environment.')
