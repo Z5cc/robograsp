@@ -58,3 +58,10 @@ class Gripper():
         open_length = 0.010 + 0.1143*math.sin(0.715-open_angle)
         return open_length
     
+    def get_velocity(self):
+        joint_state = p.getJointState(self.id, self.mimic_parent_id)
+        return joint_state[1]
+    
+    def get_torque(self):
+        joint_state = p.getJointState(self.id, self.mimic_parent_id)
+        return joint_state[3]

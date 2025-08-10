@@ -9,9 +9,14 @@ from Utilities import Object, Camera
 def user_control_demo():
 
     env = make_env()
-    env.reset()
     while True:
-        env.step_move(env.read_debug_parameter())
+        debug_parameter = env.read_debug_parameter()
+        delta, gr_delta = debug_parameter[0:6], debug_parameter[-1]
+        gripper_torque = env.robot.gripper.get_torque()
+        gripper_velocity = env.robot.gripper.get_velocity()
+        print('\n\ngripper_torque', gripper_torque)
+        print('gripper_velocity', gripper_velocity)
+        env.step_move(delta, gr_delta)
 
 
 

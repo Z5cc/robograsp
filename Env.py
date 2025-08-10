@@ -48,7 +48,7 @@ class Env:
 
         self.action_space_size = 7
         self.steps = 0
-        self.max_steps = 5
+        self.max_steps = 500
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -80,7 +80,7 @@ class Env:
         elif action==1: # approach
             dx = 0.015
         elif action==2: # regrasp
-            dx = -0.015
+            dx = -0.04
         elif action==3: # adjust while moving little to object
             dy = 0.01
         elif action==4:
@@ -113,6 +113,9 @@ class Env:
 
         elif gr_delta=='open':
             self.robot.open_gripper()
+
+        else:
+            self.robot.move_gripper(gr_delta)
         
         # move arm
         self.robot.move_ee(delta)
@@ -123,7 +126,7 @@ class Env:
     def step_simulation(self):
         p.stepSimulation()
         if self.vis:
-            time.sleep(self.SIMULATION_STEP_DELAY)
+            # time.sleep(self.SIMULATION_STEP_DELAY)
             self.p_bar.update(1)
     
 
@@ -190,7 +193,7 @@ def make_env():
 
     rob_pos = (0, 0.5, 0)
     rob_orn = (0, 0, 0)
-    ll_t = [-0.25,-0.15,0] # x,y,z
+    ll_t = [-0.25,-0.15,0.05] # x,y,z
     ul_t = [0.25,0.25,0.25]
     ee_center = np.array([0,0.05,0.25]) # center for starting position of end effector
     ee_tar = np.array(obj_pos) # target position for end effector
