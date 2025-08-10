@@ -71,18 +71,17 @@ class Env:
 
 
     def step(self, action):
-        gr_l = 0.05
+        gr_delta = 'open'
         dx = +0.005
         dy,dz = 0,0
         droll,dpitch,dyaw=0,0,0
 
         if action==0: # grasp
-            gr_l = 0
-            dx = -0.5
+            gr_delta = 'close'
         elif action==1: # approach
             dx = 0.015
         elif action==2: # regrasp
-            dx = -0.06
+            dx = -0.015
         elif action==3: # adjust while moving little to object
             dy = 0.01
         elif action==4:
@@ -92,8 +91,8 @@ class Env:
         elif action==6:
             dz = -0.01
 
-        delta = [dx,dy,dz,droll,dpitch,dyaw,gr_l]
-        self.step_move(delta)
+        delta = [dx,dy,dz,droll,dpitch,dyaw]
+        self.step_move(delta,gr_delta)
         obs = self.get_observation()
         reward = self.get_reward()
 
@@ -104,13 +103,21 @@ class Env:
         return obs, reward, terminated, truncated, info
 
 
-    def step_move(self, delta):
-        self.robot.move_gripper(delta[-1])
-        if delta[-1]==0:
-            for _ in range(120):  # Wait for a few steps
+    def step_move(self, delta, gr_delta):
+        # move gripper
+        if gr_delta=='close':
+            self.robot.close_gripper()
+            for _ in range(120):
                 self.step_simulation()
-        self.robot.move_ee(delta[:-1]) # delta: dx,dy,dz,droll,dpitch,dyaw,gripper_opening_length
-        for _ in range(120):  # Wait for a few steps
+            if self.robot.has_object():
+                delta[0]=-0.5
+
+        elif gr_delta=='open':
+            self.robot.open_gripper()
+        
+        # move arm
+        self.robot.move_ee(delta)
+        for _ in range(120):
             self.step_simulation()
 
 

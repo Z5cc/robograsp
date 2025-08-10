@@ -90,8 +90,10 @@ def select_action(state):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
+            print('not random')
             return policy_net(state).max(1).indices.view(1, 1)
     else:
+        print('random')
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
 

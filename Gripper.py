@@ -3,12 +3,12 @@ import math
 
 
 class Gripper():
-    def __init__(self, id, j_names, j_maxForce, j_maxVelocity):
+    def __init__(self, id, j_names, j_maxForce, j_maxVelocity, max_open=0.05):
         self.id = id
         self.j_names = j_names
         self.j_maxForce = j_maxForce
         self.j_maxVelocity = j_maxVelocity
-        self.gripper_range = [0, 0.085]
+        self.gripper_range = [0, 0.085 if max_open>0.085 else max_open]
 
         # To control the gripper
         mimic_parent_name = 'finger_joint'
@@ -50,3 +50,11 @@ class Gripper():
 
     def close(self):
         self.move(self.gripper_range[0])
+
+
+    def get_opening_length(self):
+        joint_state = p.getJointState(self.id, self.mimic_parent_id)
+        open_angle = joint_state[0]
+        open_length = 0.010 + 0.1143*math.sin(0.715-open_angle)
+        return open_length
+    

@@ -146,6 +146,15 @@ class Robot:
 
 
 
+    def has_object(self,threshold=0.001):
+        opening_length=self.gripper.get_opening_length()
+        if opening_length>threshold:
+            return True
+        else:
+            return False
+
+
+
 
 
     def reset(self):
