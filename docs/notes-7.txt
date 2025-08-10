@@ -1,6 +1,6 @@
 TODOS:
 - fix behaviour when in first run gripper 'jumps' into object   CHECK
-- fix to many resets (about 4) before anything happens
+- fix to many resets (about 4) before anything happens          CHECK
 - fix angle changing when robot gets close to restriction cone
 - balance exploration vs explotation
 - reset env when object flew to far away

@@ -190,12 +190,8 @@ class Robot:
         # drive gripper to default open position
         self.gripper.reset()
 
-        # 4. let world settle
-        for _ in range(120):
-            self.step_simulation()
+        # 4. let world settle -> done in env, because besides robot object also needs to settle
 
-    def step_simulation(self):
-        raise RuntimeError('`step_simulation` method of RobotBase Class should be hooked by the environment.')
 
     def get_joint_obs(self):
         positions = []

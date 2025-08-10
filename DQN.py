@@ -34,11 +34,11 @@ class ReplayMemory(object):
 
 class DQN(nn.Module):
 
-    def __init__(self, n_actions):
+    def __init__(self, h, w, n_actions):
         super(DQN, self).__init__()
         self.layer1 = nn.Conv2d(1,3,(3,3),padding='same')
         self.layer2 = nn.Conv2d(3,1,(3,3),padding='same')
-        self.layer3 = nn.Linear(48*48,n_actions)
+        self.layer3 = nn.Linear(h*w, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).

@@ -36,7 +36,6 @@ class Env:
         self.planeID = p.loadURDF("plane.urdf")
         self.object.load()
         self.robot.load()
-        self.robot.step_simulation = self.step_simulation
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
@@ -49,7 +48,7 @@ class Env:
 
         self.action_space_size = 7
         self.steps = 0
-        self.max_steps = 500
+        self.max_steps = 5
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -157,6 +156,9 @@ class Env:
     def reset(self):
         self.robot.reset()
         self.object.reset()
+        for _ in range(120):
+            self.step_simulation()
+
         self.steps = 0
         info = None
         return self.get_observation(), info
@@ -181,7 +183,7 @@ def make_env():
     cam_pos = (0.2, 0.2, 0.15)
     cam_tar = obj_pos
     cam_up = (0, 0, 1)
-    near = 0.1 # 0.01 means anything closer than 1 cm is invisible
+    near = 0.1 # 0.1 means anything closer than 10 cm is invisible
     far = 5 # anything further than this is also invisible
     size = (48, 48)
     fov = 40
