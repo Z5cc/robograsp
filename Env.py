@@ -94,10 +94,12 @@ class Env:
         obs = self.step_move(delta,gr_delta)
         reward = self.get_reward()
 
-        terminated = True if reward == 1 else False
+
         info = None
         self.steps += 1
         truncated = self.steps >= self.max_steps
+        terminated = (reward==1)  or (self.object.is_in_boundaries()==False)
+
         return obs, reward, terminated, truncated, info
 
 
@@ -206,7 +208,7 @@ def make_env():
 
 
 
-    object = Object(obj_pos)
+    object = Object(obj_pos, ll_t, ul_t)
     camera = Camera(cam_pos, cam_tar, cam_up, near, far, size, fov)
     robot = Robot(rob_pos, rob_orn, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi)
 

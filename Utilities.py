@@ -15,9 +15,11 @@ import random
 
 
 class Object:
-    def __init__(self, pos):
+    def __init__(self, pos, ll, ul):
         self.files = ['clear_box','green_cup','green_bowl']
         self.pos = pos
+        self.ll = ll
+        self.ul = ul
 
     def load(self):
         object = random.choice(self.files)
@@ -29,6 +31,9 @@ class Object:
         p.removeBody(self.id)
         self.load()
 
+    def is_in_boundaries(self):
+        x, y, _ = p.getBasePositionAndOrientation(self.id)[0]
+        return self.ll[0] < x < self.ul[0] and self.ll[1] < y < self.ul[1]
 
 
 
