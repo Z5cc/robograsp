@@ -48,7 +48,7 @@ class Env:
 
         self.action_space_size = 7
         self.steps = 0
-        self.max_steps = 500
+        self.max_steps = 200
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -91,8 +91,7 @@ class Env:
             dz = -0.01
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
-        self.step_move(delta,gr_delta)
-        obs = self.get_observation()
+        obs = self.step_move(delta,gr_delta)
         reward = self.get_reward()
 
         terminated = True if reward == 1 else False
@@ -121,6 +120,8 @@ class Env:
         self.robot.move_ee(delta)
         for _ in range(120):
             self.step_simulation()
+        
+        return self.get_observation()
 
 
     def step_simulation(self):
@@ -183,18 +184,20 @@ class Env:
 def make_env():
     obj_pos = (0,0,0)
 
-    cam_pos = (0.2, 0.2, 0.15)
-    cam_tar = obj_pos
-    cam_up = (0, 0, 1)
-    near = 0.1 # 0.1 means anything closer than 10 cm is invisible
-    far = 5 # anything further than this is also invisible
+    # camera doesnt need to film whole action area of robot, robot should learn not to leave camera area
+    # also: it is good when camera looks at 0,0,0. when center of object leaves action area of robot, env is reseted
+    cam_pos = (0.20, 0.20, 0.15)
+    cam_tar = (0,0,0)
+    cam_up = (0,0,1)
+    near = 0.01 # 0.1 means anything closer than 10 cm is invisible
+    far = 0.6 # anything further than this is alsodefault fovdefault fov invisible
     size = (48, 48)
     fov = 40
 
     rob_pos = (0, 0.5, 0)
     rob_orn = (0, 0, 0)
-    ll_t = [-0.25,-0.15,0.05] # x,y,z
-    ul_t = [0.25,0.25,0.25]
+    ll_t = [-0.15,-0.15,0.05] # x,y,z
+    ul_t = [0.15,0.15,0.25]
     ee_center = np.array([0,0.05,0.25]) # center for starting position of end effector
     ee_tar = np.array(obj_pos) # target position for end effector
     ee_up = np.array([0,-1,0])

@@ -2,9 +2,15 @@ TODOS:
 - fix behaviour when in first run gripper 'jumps' into object   CHECK
 - fix to many resets (about 4) before anything happens          CHECK
 - fix has_object function                                       CHECK
-- reset env when object flew to far away  [same boundaries for: object, camera, robot]
-- fix angle changing when robot gets close to restriction cone
-- fix camera distance not visible
+- fix regarding depth image: scale, range                       CHECK
+- fix angle changing when robot gets close to restriction cone  CHECK
 - fix bar not visually
-- fix regarding depth image: scale, range
 - balance exploration vs explotation
+
+PRIORITY TODO:
+- reset env when object flew to far away  [same boundaries for: object, camera, robot]
+ - camera: CHECK
+ - robot: CHECK
+ - object: still need to do: reset env, when center of object leaves robot action area
+- expand NN
+- near for depth camera, optimize value, maybe needs to be bigger or smaller
