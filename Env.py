@@ -48,7 +48,7 @@ class Env:
 
         self.action_space_size = 7
         self.steps = 0
-        self.max_steps = 200
+        self.max_steps = 100
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -80,15 +80,15 @@ class Env:
         elif action==1: # approach
             dx = 0.015
         elif action==2: # regrasp
-            dx = -0.04
+            dx = -0.015
         elif action==3: # adjust while moving little to object
-            dy = 0.01
+            dy = 0.015
         elif action==4:
-            dy = -0.01
+            dy = -0.015
         elif action==5:
-            dz = +0.01
+            dz = +0.015
         elif action==6:
-            dz = -0.01
+            dz = -0.015
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         obs = self.step_move(delta,gr_delta)

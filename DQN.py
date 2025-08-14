@@ -36,15 +36,24 @@ class DQN(nn.Module):
 
     def __init__(self, h, w, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Conv2d(1,3,(3,3),padding='same')
-        self.layer2 = nn.Conv2d(3,1,(3,3),padding='same')
-        self.layer3 = nn.Linear(h*w, n_actions)
+        self.conv1 = nn.Conv2d(1,16,(5,5),padding='same')
+        self.pool1 = nn.MaxPool2d((2,2),stride=(2,2))
+        self.conv2 = nn.Conv2d(16,32,(5,5),padding='same')
+        self.pool2 = nn.MaxPool2d((2,2),stride=(2,2))
+        self.conv3 = nn.Conv2d(32,64,(3,3),padding='same')
+        self.pool3 = nn.MaxPool2d((2,2),stride=(2,2))
+        self.lin1 = nn.Linear(6*6*64, 1000)
+        self.lin2 = nn.Linear(1000,300)
+        self.lin3 = nn.Linear(300, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
+        x = self.pool1(F.relu(self.conv1(x)))
+        x = self.pool2(F.relu(self.conv2(x)))
+        x = self.pool3(F.relu(self.conv3(x)))
         x = x.view(x.size(0),-1)
-        return self.layer3(x)
+        x = F.relu(self.lin1(x))
+        x = F.relu(self.lin2(x))
+        return self.lin3(x)
     

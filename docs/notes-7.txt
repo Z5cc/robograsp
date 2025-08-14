@@ -4,11 +4,11 @@ TODOS:
 - fix has_object function                                       CHECK
 - fix regarding depth image: scale, range                       CHECK
 - fix angle changing when robot gets close to restriction cone  CHECK
-- fix bar not visually
+- fix bar not visually                                          CHECK
 - balance exploration vs explotation
 
 PRIORITY TODO:
-- reset env when object flew to far away  [same boundaries for: object, camera, robot]
+- reset env when object flew to far away  [same boundaries for: object, camera, robot]      CHECK
  - camera: CHECK
  - robot: CHECK
  - object: still need to do: reset env, when center of object leaves robot action area
