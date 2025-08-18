@@ -49,10 +49,12 @@ class Robot:
                 p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
             if name == 'ee_tcp_joint':
                 self.eef_id = i # link index, not joint index. however the joint index i will have same value as link index
+            if name == 'robotiq_85_base_joint':
+                gripper_base_link_id = i
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
         
-        self.gripper = Gripper(self.id, self.j_names, self.j_maxForce, self.j_maxVelocity)
+        self.gripper = Gripper(self.id, gripper_base_link_id, self.j_names, self.j_maxForce, self.j_maxVelocity)
         
 
     
@@ -146,12 +148,7 @@ class Robot:
 
 
 
-    def has_object(self,threshold=1):
-        gripper_torque = self.gripper.get_torque()
-        if gripper_torque>threshold:
-            return True
-        else:
-            return False
+
 
 
 

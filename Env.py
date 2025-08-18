@@ -109,7 +109,7 @@ class Env:
             self.robot.close_gripper()
             for _ in range(30):
                 self.step_simulation()
-            if self.robot.has_object():
+            if self.robot.gripper.has_object():
                 delta[0]=-0.5
 
         elif gr_delta=='open':
@@ -198,7 +198,7 @@ def make_env():
 
     rob_pos = (0, 0.5, 0)
     rob_orn = (0, 0, 0)
-    ll_t = [-0.15,-0.15,0.05] # x,y,z
+    ll_t = [-0.15,-0.15,0.03] # x,y,z
     ul_t = [0.15,0.15,0.25]
     ee_center = np.array([0,0.05,0.25]) # center for starting position of end effector
     ee_tar = np.array(obj_pos) # target position for end effector

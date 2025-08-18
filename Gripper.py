@@ -3,8 +3,9 @@ import math
 
 
 class Gripper():
-    def __init__(self, id, j_names, j_maxForce, j_maxVelocity, max_open=0.05):
+    def __init__(self, id, base_link_id, j_names, j_maxForce, j_maxVelocity, max_open=0.05):
         self.id = id
+        self.base_link_id = base_link_id
         self.j_names = j_names
         self.j_maxForce = j_maxForce
         self.j_maxVelocity = j_maxVelocity
@@ -65,3 +66,35 @@ class Gripper():
     def get_torque(self):
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
         return joint_state[3]
+
+    def has_object(self,threshold=1):
+        gripper_torque = self.get_torque()
+        if gripper_torque>threshold:
+            return True
+        else:
+            return False
+        
+    
+
+    def center_test(self, object_id):
+        test_cube = 
+        return p.intersection(test_cube, object_id)
+
+    def ray_test(self, object_id):
+        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        normal = orn...
+        pos = pos + normal * x
+        rays_start = 
+        rays_end = rays_start + ...
+        fractions = rays_intersection(self, rays_start, rays_end, object_id)
+
+
+
+
+    def rays_intersection(rays_start, rays_end, object_id):
+        hits = p.rayTestBatch(rays_start, rays_end)
+        fractions = []
+        for hit in hits:
+            if hit[0]==object_id:
+                fractions.append(hit[2])
+        return fractions
