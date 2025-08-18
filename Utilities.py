@@ -8,6 +8,7 @@ import cv2
 from scipy import ndimage
 import numpy as np
 from pathlib import Path
+import pybullet_data
 import random
 
 
@@ -16,14 +17,15 @@ import random
 
 class Object:
     def __init__(self, pos, ll, ul):
-        self.files = ['clear_box','green_cup','green_bowl']
+        # self.files = ['clear_box','green_cup','green_bowl']
         self.pos = pos
         self.ll = ll
         self.ul = ul
 
     def load(self):
-        object = random.choice(self.files)
-        path = Path("urdf_objects") / object / "model.urdf"
+        object = str(random.randint(0,999)).zfill(3)
+        root = Path(pybullet_data.getDataPath()) / "random_urdfs"
+        path = root / object / f"{object}.urdf"
         path = str(path)
         self.id = p.loadURDF(path,self.pos)
     

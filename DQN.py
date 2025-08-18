@@ -36,13 +36,13 @@ class DQN(nn.Module):
 
     def __init__(self, h, w, n_actions):
         super(DQN, self).__init__()
-        self.conv1 = nn.Conv2d(1,16,(5,5),padding='same')
+        self.conv1 = nn.Conv2d(1,8,(5,5),padding='same')
         self.pool1 = nn.MaxPool2d((2,2),stride=(2,2))
-        self.conv2 = nn.Conv2d(16,32,(5,5),padding='same')
+        self.conv2 = nn.Conv2d(8,16,(3,3),padding='same')
         self.pool2 = nn.MaxPool2d((2,2),stride=(2,2))
-        self.conv3 = nn.Conv2d(32,64,(3,3),padding='same')
+        self.conv3 = nn.Conv2d(16,32,(3,3),padding='same')
         self.pool3 = nn.MaxPool2d((2,2),stride=(2,2))
-        self.lin1 = nn.Linear(6*6*64, 1000)
+        self.lin1 = nn.Linear(4*4*32, 1000)
         self.lin2 = nn.Linear(1000,300)
         self.lin3 = nn.Linear(300, n_actions)
 

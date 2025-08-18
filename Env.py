@@ -107,7 +107,7 @@ class Env:
         # move gripper
         if gr_delta=='close':
             self.robot.close_gripper()
-            for _ in range(120):
+            for _ in range(30):
                 self.step_simulation()
             if self.robot.has_object():
                 delta[0]=-0.5
@@ -120,7 +120,7 @@ class Env:
         
         # move arm
         self.robot.move_ee(delta)
-        for _ in range(120):
+        for _ in range(30):
             self.step_simulation()
         
         return self.get_observation()
@@ -162,7 +162,7 @@ class Env:
     def reset(self):
         self.robot.reset()
         self.object.reset()
-        for _ in range(120):
+        for _ in range(30):
             self.step_simulation()
 
         self.steps = 0
@@ -193,7 +193,7 @@ def make_env():
     cam_up = (0,0,1)
     near = 0.01 # 0.1 means anything closer than 10 cm is invisible
     far = 0.6 # anything further than this is alsodefault fovdefault fov invisible
-    size = (48, 48)
+    size = (32, 32)
     fov = 40
 
     rob_pos = (0, 0.5, 0)
