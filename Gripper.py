@@ -81,25 +81,32 @@ class Gripper():
         
     
 
+
+
+
+
     def center_test(self):
         test_cube = 
         return p.intersection(test_cube, self.object.id)
 
+    def interpolate_grid(v00, v10, v01, v11, nx, ny):
+        v00, v10, v01, v11 = map(np.array, [v00, v10, v01, v11])
+        u = np.linspace(0, 1, nx)
+        v = np.linspace(0, 1, ny)
+        uu, vv = np.meshgrid(u, v, indexing='ij')
+        # bilinear interpolation formula
+        points = ((1-uu)*(1-vv))[:, :, None]*v00 \
+            + ( uu*(1-vv))[:, :, None]*v10 \
+            + ((1-uu)*vv)[:, :, None]*v01 \
+            + ( uu*vv)[:, :, None]*v11
+        return points
 
 
-
-
-
-
-    def get_inner_froms(self):
+    def get_froms(self):
         pos, orn, *_ = p.getLinkState(self.base_link_id)
 
-        return froms       
+        return outer_froms, inner_froms    
 
-    def get_outer_froms(self):
-        pos, orn, *_ = p.getLinkState(self.base_link_id)
-
-        return froms
     
     def get_tos(self,froms, ray_length):
         pos, orn, *_ = p.getLinkState(self.base_link_id)
@@ -136,7 +143,7 @@ class Gripper():
     def get_delta_outer_inner_rays(self,ray_length):
         outer_froms = 
         outer_tos = self.get_tos(outer_froms, ray_length)
-        inner_froms =
+        inner_froms = 
         inner_tos = self.get_tos(inner_froms,ray_length)
 
         outer_hits = self.get_hits(outer_froms,outer_tos)
