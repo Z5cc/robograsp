@@ -9,7 +9,7 @@ from Gripper import Gripper
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi):
+    def __init__(self, pos, ori, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi, object):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
@@ -20,6 +20,7 @@ class Robot:
         self.ee_up = ee_up
         self.cone_tar = cone_tar
         self.cone_phi = cone_phi
+        self.object = object
 
     def load(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
@@ -54,7 +55,7 @@ class Robot:
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
         
-        self.gripper = Gripper(self.id, gripper_base_link_id, self.j_names, self.j_maxForce, self.j_maxVelocity)
+        self.gripper = Gripper(self.id, gripper_base_link_id, self.j_names, self.j_maxForce, self.j_maxVelocity, self.object)
         
 
     

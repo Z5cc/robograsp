@@ -1,14 +1,19 @@
 import pybullet as p
 import math
+import numpy as np
+from collections import namedtuple
+
+
 
 
 class Gripper():
-    def __init__(self, id, base_link_id, j_names, j_maxForce, j_maxVelocity, max_open=0.05):
+    def __init__(self, id, base_link_id, j_names, j_maxForce, j_maxVelocity, object, max_open=0.05):
         self.id = id
         self.base_link_id = base_link_id
         self.j_names = j_names
         self.j_maxForce = j_maxForce
         self.j_maxVelocity = j_maxVelocity
+        self.object = object
         self.gripper_range = [0, 0.085 if max_open>0.085 else max_open]
 
         # To control the gripper
@@ -76,25 +81,64 @@ class Gripper():
         
     
 
-    def center_test(self, object_id):
+    def center_test(self):
         test_cube = 
-        return p.intersection(test_cube, object_id)
+        return p.intersection(test_cube, self.object.id)
 
-    def ray_test(self, object_id):
+
+
+
+
+
+
+    def get_inner_froms(self):
         pos, orn, *_ = p.getLinkState(self.base_link_id)
-        normal = orn...
-        pos = pos + normal * x
-        rays_start = 
-        rays_end = rays_start + ...
-        fractions = rays_intersection(self, rays_start, rays_end, object_id)
 
+        return froms       
 
+    def get_outer_froms(self):
+        pos, orn, *_ = p.getLinkState(self.base_link_id)
 
+        return froms
+    
+    def get_tos(self,froms, ray_length):
+        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
+        forward = rot_matrix[:, 0]
+        tos = [f + forward*ray_length for f in froms]
+        return tos
+    
+    def get_hits(self, froms, tos):
+        hits = p.rayTestBatch(self,froms, tos)
+        return hits
 
-    def rays_intersection(rays_start, rays_end, object_id):
-        hits = p.rayTestBatch(rays_start, rays_end)
-        fractions = []
+    
+    def object_is_hit(self, hits):
         for hit in hits:
-            if hit[0]==object_id:
-                fractions.append(hit[2])
-        return fractions
+            if hit[0]==self.object.id:
+                return True
+            
+    def get_shortest_hit(self, hits, ray_length):
+        x = ray_length
+        for hit in hits:
+            absolute_fraction=ray_length
+            if hit[0]==self.object.id:
+                absolute_fraction = hit[2]*ray_length
+            if absolute_fraction<ray_length:
+                x = absolute_fraction
+        return x
+
+
+
+
+
+
+    def get_delta_outer_inner_rays(self,ray_length):
+        outer_froms = 
+        outer_tos = self.get_tos(outer_froms, ray_length)
+        inner_froms =
+        inner_tos = self.get_tos(inner_froms,ray_length)
+
+        outer_hits = self.get_hits(outer_froms,outer_tos)
+        inner_hits = self.get_hits(inner_froms,inner_tos)
+        return self.get_shortest_hit(self,outer_hits,ray_length) - self.get_shortest_hit(self,inner_hits,ray_length)

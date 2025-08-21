@@ -210,7 +210,7 @@ def make_env():
 
     object = Object(obj_pos, ll_t, ul_t)
     camera = Camera(cam_pos, cam_tar, cam_up, near, far, size, fov)
-    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi)
+    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi,object)
 
 
 
