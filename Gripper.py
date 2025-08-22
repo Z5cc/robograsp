@@ -87,7 +87,7 @@ class Gripper():
 
 
     def local_to_global(self, pt_local):
-        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        pos, orn, *_ = p.getLinkState(self.id,self.base_link_id)
         pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
         return pt_world
 
@@ -117,9 +117,9 @@ class Gripper():
         inner_frame = map(self.local_to_global, inner_frame)
         right_outer_frame = map(self.local_to_global, right_outer_frame)
         left_outer_frame = map(self.local_to_global, left_outer_frame)
-        inner_grid = self.interpolate_grid(inner_frame,5,20)
-        right_outer_grid = self.interpolate_grid(right_outer_frame,5,6)
-        left_outer_grid = self.interpolate_grid(left_outer_frame,5,6)
+        inner_grid = self.interpolate_grid(*inner_frame,5,20)
+        right_outer_grid = self.interpolate_grid(*right_outer_frame,5,6)
+        left_outer_grid = self.interpolate_grid(*left_outer_frame,5,6)
         outer_grid = np.concatenate([left_outer_grid, right_outer_grid], axis=0)
 
         inner_froms = inner_grid.reshape(-1,3).tolist()
@@ -165,8 +165,8 @@ class Gripper():
 
 
 
-    def ray_tests(self,ray_length, graspable_reach):
-        outer_froms, inner_froms = self.getfroms()
+    def ray_tests(self, ray_length=100, graspable_reach=10):
+        outer_froms, inner_froms = self.get_froms()
         outer_tos = self.get_tos(outer_froms, ray_length)
         inner_tos = self.get_tos(inner_froms,ray_length)
 
