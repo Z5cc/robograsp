@@ -85,9 +85,11 @@ class Gripper():
 
 
 
-    def center_test(self):
-        test_cube = 
-        return p.intersection(test_cube, self.object.id)
+
+    def local_to_global(self, pt_local):
+        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
+        return pt_world
 
     def interpolate_grid(v00, v10, v01, v11, ni, nj):
         v00, v10, v01, v11 = map(np.array, [v00, v10, v01, v11])
@@ -95,18 +97,11 @@ class Gripper():
         v = np.linspace(0, 1, nj)
         uu, vv = np.meshgrid(u, v, indexing='ij') # i rows, j columns
         # bilinear interpolation formula
-        points = ((1-uu)*(1-vv))[:, :, None, None]*v00 \
+        grid = ((1-uu)*(1-vv))[:, :, None, None]*v00 \
                + (uu*(1-vv))[:, :, None, None]*v10 \
                + ((1-uu)*vv)[:, :, None, None]*v01 \
                + (uu*vv)[:, :, None, None]*v11
-        return points
-    
-
-    def local_to_global(self, pt_local):
-        pos, orn, *_ = p.getLinkState(self.base_link_id)
-        pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
-        return pt_world
-
+        return grid
 
     def get_froms(self):
         h = 11
@@ -116,12 +111,20 @@ class Gripper():
         ow = w-1
         oow = w+6.5+9+1
         oh = h+1
-        inner_frame = [(0,iw,ih),(0,-iw,ih),(0,-iw,-ih),(0,iw,-ih)] # top_right, top_left, bottom_left, bottom_right
-        right_outer_frame = [(0,oow,oh),(0,ow,oh),(0,ow,-oh),(0,oow,-oh)] # top_right, top_left, bottom_left, bottom_right
+        inner_frame = [(0,-iw,ih),(0,-iw,-ih),(0,iw,ih),(0,iw,-ih)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
+        right_outer_frame = [(0,ow,oh),(0,ow,-oh),(0,oow,oh),(0,oow,-oh)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
         left_outer_frame = [(x,-y,z) for (x,y,z) in right_outer_frame] # mirror right_outer_frame
-        
-        return outer_froms, inner_froms
+        inner_frame = map(self.local_to_global, inner_frame)
+        right_outer_frame = map(self.local_to_global, right_outer_frame)
+        left_outer_frame = map(self.local_to_global, left_outer_frame)
+        inner_grid = self.interpolate_grid(inner_frame,5,20)
+        right_outer_grid = self.interpolate_grid(right_outer_frame,5,6)
+        left_outer_grid = self.interpolate_grid(left_outer_frame,5,6)
+        outer_grid = np.concatenate([left_outer_grid, right_outer_grid], axis=0)
 
+        inner_froms = inner_grid.reshape(-1,3).tolist()
+        outer_froms = outer_grid.reshape(-1,3).tolist()
+        return outer_froms, inner_froms
     
     def get_tos(self,froms, ray_length):
         pos, orn, *_ = p.getLinkState(self.base_link_id)
@@ -130,6 +133,13 @@ class Gripper():
         tos = [f + forward*ray_length for f in froms]
         return tos
     
+
+
+
+
+
+
+
     def get_hits(self, froms, tos):
         hits = p.rayTestBatch(self,froms, tos)
         return hits
@@ -155,12 +165,16 @@ class Gripper():
 
 
 
-    def get_delta_outer_inner_rays(self,ray_length):
-        outer_froms = 
+    def ray_tests(self,ray_length, graspable_reach):
+        outer_froms, inner_froms = self.getfroms()
         outer_tos = self.get_tos(outer_froms, ray_length)
-        inner_froms = 
         inner_tos = self.get_tos(inner_froms,ray_length)
 
         outer_hits = self.get_hits(outer_froms,outer_tos)
         inner_hits = self.get_hits(inner_froms,inner_tos)
-        return self.get_shortest_hit(self,outer_hits,ray_length) - self.get_shortest_hit(self,inner_hits,ray_length)
+        outer_shortest_hit = self.get_shortest_hit(self,outer_hits,ray_length)
+        inner_shortest_hit = self.get_shortest_hit(self,inner_hits,ray_length)
+        delta = outer_shortest_hit - inner_shortest_hit
+        graspable = inner_shortest_hit < graspable_reach
+        return delta, graspable
+    
