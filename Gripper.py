@@ -89,16 +89,16 @@ class Gripper():
         test_cube = 
         return p.intersection(test_cube, self.object.id)
 
-    def interpolate_grid(v00, v10, v01, v11, nx, ny):
+    def interpolate_grid(v00, v10, v01, v11, ni, nj):
         v00, v10, v01, v11 = map(np.array, [v00, v10, v01, v11])
-        u = np.linspace(0, 1, nx)
-        v = np.linspace(0, 1, ny)
-        uu, vv = np.meshgrid(u, v, indexing='ij')
+        u = np.linspace(0, 1, ni)
+        v = np.linspace(0, 1, nj)
+        uu, vv = np.meshgrid(u, v, indexing='ij') # i rows, j columns
         # bilinear interpolation formula
-        points = ((1-uu)*(1-vv))[:, :, None]*v00 \
-            + ( uu*(1-vv))[:, :, None]*v10 \
-            + ((1-uu)*vv)[:, :, None]*v01 \
-            + ( uu*vv)[:, :, None]*v11
+        points = ((1-uu)*(1-vv))[:, :, None, None]*v00 \
+               + (uu*(1-vv))[:, :, None, None]*v10 \
+               + ((1-uu)*vv)[:, :, None, None]*v01 \
+               + (uu*vv)[:, :, None, None]*v11
         return points
 
 
