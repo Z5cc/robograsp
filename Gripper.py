@@ -100,12 +100,27 @@ class Gripper():
                + ((1-uu)*vv)[:, :, None, None]*v01 \
                + (uu*vv)[:, :, None, None]*v11
         return points
+    
+
+    def local_to_global(self, pt_local):
+        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
+        return pt_world
 
 
     def get_froms(self):
-        pos, orn, *_ = p.getLinkState(self.base_link_id)
-
-        return outer_froms, inner_froms    
+        h = 11
+        w = self.gripper_range[1]/2
+        iw = w-2
+        ih = h-1
+        ow = w-1
+        oow = w+6.5+9+1
+        oh = h+1
+        inner_frame = [(0,iw,ih),(0,-iw,ih),(0,-iw,-ih),(0,iw,-ih)] # top_right, top_left, bottom_left, bottom_right
+        right_outer_frame = [(0,oow,oh),(0,ow,oh),(0,ow,-oh),(0,oow,-oh)] # top_right, top_left, bottom_left, bottom_right
+        left_outer_frame = [(x,-y,z) for (x,y,z) in right_outer_frame] # mirror right_outer_frame
+        
+        return outer_froms, inner_froms
 
     
     def get_tos(self,froms, ray_length):
