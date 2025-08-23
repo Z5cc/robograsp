@@ -91,7 +91,7 @@ class Gripper():
         pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
         return pt_world
 
-    def interpolate_grid(v00, v10, v01, v11, ni, nj):
+    def interpolate_grid(self, v00, v10, v01, v11, ni, nj):
         v00, v10, v01, v11 = map(np.array, [v00, v10, v01, v11])
         u = np.linspace(0, 1, ni)
         v = np.linspace(0, 1, nj)
@@ -114,9 +114,9 @@ class Gripper():
         inner_frame = [(0,-iw,ih),(0,-iw,-ih),(0,iw,ih),(0,iw,-ih)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
         right_outer_frame = [(0,ow,oh),(0,ow,-oh),(0,oow,oh),(0,oow,-oh)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
         left_outer_frame = [(x,-y,z) for (x,y,z) in right_outer_frame] # mirror right_outer_frame
-        inner_frame = map(self.local_to_global, inner_frame)
-        right_outer_frame = map(self.local_to_global, right_outer_frame)
-        left_outer_frame = map(self.local_to_global, left_outer_frame)
+        inner_frame = list(map(self.local_to_global, inner_frame))
+        right_outer_frame = list(map(self.local_to_global, right_outer_frame))
+        left_outer_frame = list(map(self.local_to_global, left_outer_frame))
         inner_grid = self.interpolate_grid(*inner_frame,5,20)
         right_outer_grid = self.interpolate_grid(*right_outer_frame,5,6)
         left_outer_grid = self.interpolate_grid(*left_outer_frame,5,6)
@@ -127,7 +127,7 @@ class Gripper():
         return outer_froms, inner_froms
     
     def get_tos(self,froms, ray_length):
-        pos, orn, *_ = p.getLinkState(self.base_link_id)
+        pos, orn, *_ = p.getLinkState(self.id,self.base_link_id)
         rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
         forward = rot_matrix[:, 0]
         tos = [f + forward*ray_length for f in froms]
@@ -141,7 +141,7 @@ class Gripper():
 
 
     def get_hits(self, froms, tos):
-        hits = p.rayTestBatch(self,froms, tos)
+        hits = p.rayTestBatch(froms, tos)
         return hits
 
     
@@ -162,19 +162,25 @@ class Gripper():
 
 
 
-
+    def draw_debug_lines(self, froms, tos, visible=True):
+        if visible:
+            for f, to in zip(froms, tos):
+                p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5, lifeTime=1)
 
 
     def ray_tests(self, ray_length=100, graspable_reach=10):
         outer_froms, inner_froms = self.get_froms()
         outer_tos = self.get_tos(outer_froms, ray_length)
         inner_tos = self.get_tos(inner_froms,ray_length)
+        self.draw_debug_lines(outer_froms,outer_tos)
+        self.draw_debug_lines(inner_froms,inner_tos)
 
         outer_hits = self.get_hits(outer_froms,outer_tos)
         inner_hits = self.get_hits(inner_froms,inner_tos)
-        outer_shortest_hit = self.get_shortest_hit(self,outer_hits,ray_length)
-        inner_shortest_hit = self.get_shortest_hit(self,inner_hits,ray_length)
+        outer_shortest_hit = self.get_shortest_hit(outer_hits,ray_length)
+        inner_shortest_hit = self.get_shortest_hit(inner_hits,ray_length)
         delta = outer_shortest_hit - inner_shortest_hit
         graspable = inner_shortest_hit < graspable_reach
         return delta, graspable
     
+
