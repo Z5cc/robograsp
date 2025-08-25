@@ -91,25 +91,27 @@ class Env:
             dz = -0.015
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
-        obs = self.step_move(delta,gr_delta)
+        obs, has_object = self.step_move(delta,gr_delta)
         reward = self.get_reward()
         print(f'reward:{reward}\n')
 
         info = None
         self.steps += 1
         truncated = self.steps >= self.max_steps
-        terminated = (reward==1)  or (self.object.is_in_boundaries()==False)
+        terminated = (has_object==True)  or (self.object.is_in_boundaries()==False)
 
         return obs, reward, terminated, truncated, info
 
 
     def step_move(self, delta, gr_delta):
+        has_object=False
         # move gripper
         if gr_delta=='close':
             self.robot.close_gripper()
             for _ in range(30):
                 self.step_simulation()
-            if self.robot.gripper.has_object():
+            has_object=self.robot.gripper.has_object()
+            if has_object:
                 delta[0]=-0.5
 
         elif gr_delta=='open':
@@ -123,7 +125,7 @@ class Env:
         for _ in range(30):
             self.step_simulation()
         
-        return self.get_observation()
+        return self.get_observation(), has_object
 
 
     def step_simulation(self):
@@ -150,7 +152,7 @@ class Env:
     
     def get_reward(self):
         # -1 to penalize many required steps for grasping
-        reward = -1
+        reward = -0.1
         # check for successfull grasp
         lo, hi = p.getAABB(self.object.id)
         lowest_point_z = lo[2]
@@ -159,13 +161,13 @@ class Env:
         # raytest rewards
         delta,graspable = self.robot.gripper.ray_tests()
         if graspable:
-            return reward+50
+            return reward+5
         if delta>0.060:
-            return reward+10
+            return reward+1
         if 0<delta<0.060:
-            return reward+(8/0.060)*delta
+            return reward+0.1+(0.9/0.060)*delta
         else:
-            return reward+2
+            return reward+0.1
 
 
 

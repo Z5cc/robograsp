@@ -1,6 +1,11 @@
 TODOS
+- why grasped and then immediately dropped again
+- graspoing iteration terminates too early, maybe because has_object triggers wrongly
+- gripper hitting ground and then changing the angle is a problem
+
 - camera perspective to see gripper earlier
 - rewards need to be smaller or something else. iteration stops when rewards are too high, also check rewards
 - neural network: try residual layers
+- other DOFs
 
 - inference -> GIFs -> README
