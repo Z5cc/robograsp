@@ -1,0 +1,6 @@
+TODOS
+- camera perspective to see gripper earlier
+- rewards need to be smaller or something else. iteration stops when rewards are too high, also check rewards
+- neural network: try residual layers
+
+- inference -> GIFs -> README

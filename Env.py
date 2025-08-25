@@ -93,7 +93,7 @@ class Env:
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         obs = self.step_move(delta,gr_delta)
         reward = self.get_reward()
-
+        print(f'reward:{reward}\n')
 
         info = None
         self.steps += 1
@@ -160,10 +160,10 @@ class Env:
         delta,graspable = self.robot.gripper.ray_tests()
         if graspable:
             return reward+50
-        if delta>60:
+        if delta>0.060:
             return reward+10
-        if delta<60:
-            return reward+(8/60)*delta
+        if 0<delta<0.060:
+            return reward+(8/0.060)*delta
         else:
             return reward+2
 

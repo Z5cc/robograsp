@@ -5,7 +5,6 @@ from collections import namedtuple
 
 
 
-
 class Gripper():
     def __init__(self, id, base_link_id, j_names, j_maxForce, j_maxVelocity, object, max_open=0.05):
         self.id = id
@@ -104,22 +103,24 @@ class Gripper():
         return grid
 
     def get_froms(self):
-        h = 11
+        a = 0.06
+        h = 0.011
         w = self.gripper_range[1]/2
-        iw = w-2
-        ih = h-1
-        ow = w-1
-        oow = w+6.5+9+1
-        oh = h+1
-        inner_frame = [(0,-iw,ih),(0,-iw,-ih),(0,iw,ih),(0,iw,-ih)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
-        right_outer_frame = [(0,ow,oh),(0,ow,-oh),(0,oow,oh),(0,oow,-oh)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
+        iw = w-0.002
+        ih = h-0.001
+        ow = w-0.001
+        oow = w+0.0065+0.009+0.001
+        oh = h+0.001
+
+        inner_frame = [(ih,-iw,a),(-ih,-iw,a),( ih, iw,a),(-ih, iw,a)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
+        right_outer_frame = [( oh, ow,a),(-oh, ow,a),( oh,oow,a),(-oh,oow,a)] # top_left, bottom_left, top_right, bottom_right like v00, v10, v01, v11
         left_outer_frame = [(x,-y,z) for (x,y,z) in right_outer_frame] # mirror right_outer_frame
         inner_frame = list(map(self.local_to_global, inner_frame))
         right_outer_frame = list(map(self.local_to_global, right_outer_frame))
         left_outer_frame = list(map(self.local_to_global, left_outer_frame))
-        inner_grid = self.interpolate_grid(*inner_frame,5,20)
-        right_outer_grid = self.interpolate_grid(*right_outer_frame,5,6)
-        left_outer_grid = self.interpolate_grid(*left_outer_frame,5,6)
+        inner_grid = self.interpolate_grid(*inner_frame,3,5)
+        right_outer_grid = self.interpolate_grid(*right_outer_frame,2,3)
+        left_outer_grid = self.interpolate_grid(*left_outer_frame,2,3)
         outer_grid = np.concatenate([left_outer_grid, right_outer_grid], axis=0)
 
         inner_froms = inner_grid.reshape(-1,3).tolist()
@@ -129,7 +130,7 @@ class Gripper():
     def get_tos(self,froms, ray_length):
         pos, orn, *_ = p.getLinkState(self.id,self.base_link_id)
         rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
-        forward = rot_matrix[:, 0]
+        forward = rot_matrix[:, 2]
         tos = [f + forward*ray_length for f in froms]
         return tos
     
@@ -165,15 +166,15 @@ class Gripper():
     def draw_debug_lines(self, froms, tos, visible=True):
         if visible:
             for f, to in zip(froms, tos):
-                p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5, lifeTime=1)
+                p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5)
 
 
-    def ray_tests(self, ray_length=100, graspable_reach=10):
+    def ray_tests(self, ray_length=0.5, graspable_reach=0.1):
         outer_froms, inner_froms = self.get_froms()
         outer_tos = self.get_tos(outer_froms, ray_length)
         inner_tos = self.get_tos(inner_froms,ray_length)
-        self.draw_debug_lines(outer_froms,outer_tos)
-        self.draw_debug_lines(inner_froms,inner_tos)
+        # self.draw_debug_lines(outer_froms,outer_tos)
+        # self.draw_debug_lines(inner_froms,inner_tos)
 
         outer_hits = self.get_hits(outer_froms,outer_tos)
         inner_hits = self.get_hits(inner_froms,inner_tos)
@@ -181,6 +182,6 @@ class Gripper():
         inner_shortest_hit = self.get_shortest_hit(inner_hits,ray_length)
         delta = outer_shortest_hit - inner_shortest_hit
         graspable = inner_shortest_hit < graspable_reach
+        # p.removeAllUserDebugItems()
         return delta, graspable
     
-
