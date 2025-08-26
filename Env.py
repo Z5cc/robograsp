@@ -159,15 +159,18 @@ class Env:
         if lowest_point_z>0.05:
             return reward+100
         # raytest rewards
-        delta,graspable = self.robot.gripper.ray_tests()
-        if graspable:
-            return reward+5
-        if delta>0.060:
-            return reward+1
-        if 0<delta<0.060:
-            return reward+0.1+(0.9/0.060)*delta
+        object_hit,delta,graspable = self.robot.gripper.ray_tests()
+        if object_hit:
+            if graspable:
+                return reward+5
+            elif delta>0.060:
+                return reward+1
+            elif 0<delta<0.060:
+                return reward+0.1+(0.9/0.060)*delta
+            else:
+                return reward+0.1
         else:
-            return reward+0.1
+            return reward
 
 
 

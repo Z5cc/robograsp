@@ -102,8 +102,8 @@ class Gripper():
                + (uu*vv)[:, :, None, None]*v11
         return grid
 
-    def get_froms(self):
-        a = 0.06
+    def get_froms(self, ray_start):
+        a = ray_start
         h = 0.011
         w = self.gripper_range[1]/2
         iw = w-0.002
@@ -145,21 +145,13 @@ class Gripper():
         hits = p.rayTestBatch(froms, tos)
         return hits
 
-    
-    def object_is_hit(self, hits):
-        for hit in hits:
-            if hit[0]==self.object.id:
-                return True
-            
     def get_shortest_hit(self, hits, ray_length):
-        x = ray_length
-        for hit in hits:
-            absolute_fraction=ray_length
-            if hit[0]==self.object.id:
-                absolute_fraction = hit[2]*ray_length
-            if absolute_fraction<ray_length:
-                x = absolute_fraction
-        return x
+        absolute_fractions = (
+            hit[2] * ray_length if hit[0] == self.object.id else ray_length
+            for hit in hits
+        )
+        return min(absolute_fractions)
+
 
 
 
@@ -169,8 +161,8 @@ class Gripper():
                 p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5)
 
 
-    def ray_tests(self, ray_length=0.5, graspable_reach=0.1):
-        outer_froms, inner_froms = self.get_froms()
+    def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07):
+        outer_froms, inner_froms = self.get_froms(ray_start)
         outer_tos = self.get_tos(outer_froms, ray_length)
         inner_tos = self.get_tos(inner_froms,ray_length)
         # self.draw_debug_lines(outer_froms,outer_tos)
@@ -180,8 +172,9 @@ class Gripper():
         inner_hits = self.get_hits(inner_froms,inner_tos)
         outer_shortest_hit = self.get_shortest_hit(outer_hits,ray_length)
         inner_shortest_hit = self.get_shortest_hit(inner_hits,ray_length)
+        object_hit = outer_shortest_hit<ray_length or inner_shortest_hit<ray_length
         delta = outer_shortest_hit - inner_shortest_hit
         graspable = inner_shortest_hit < graspable_reach
-        # p.removeAllUserDebugItems()
-        return delta, graspable
+        p.removeAllUserDebugItems()
+        return object_hit, delta, graspable
     

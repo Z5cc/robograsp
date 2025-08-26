@@ -1,5 +1,5 @@
 TODOS
-- why grasped and then immediately dropped again
+- why grasped and then immediately dropped again    
 - graspoing iteration terminates too early, maybe because has_object triggers wrongly
 - gripper hitting ground and then changing the angle is a problem
 
