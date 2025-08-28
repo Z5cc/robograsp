@@ -152,23 +152,23 @@ class Env:
     
     def get_reward(self):
         # -1 to penalize many required steps for grasping
-        reward = -0.1
+        reward = -1
         # check for successfull grasp
         lo, hi = p.getAABB(self.object.id)
         lowest_point_z = lo[2]
         if lowest_point_z>0.05:
-            return reward+100
+            return reward+50
         # raytest rewards
         object_hit,delta,graspable = self.robot.gripper.ray_tests()
         if object_hit:
             if graspable:
-                return reward+5
+                return reward+10
             elif delta>0.060:
-                return reward+1
+                return reward+2
             elif 0<delta<0.060:
-                return reward+0.1+(0.9/0.060)*delta
+                return reward+0.5+(1.5/0.060)*delta
             else:
-                return reward+0.1
+                return reward+0.5
         else:
             return reward
 

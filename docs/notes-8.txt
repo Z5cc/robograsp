@@ -1,8 +1,9 @@
 TODOS
-- why grasped and then immediately dropped again    
-- graspoing iteration terminates too early, maybe because has_object triggers wrongly
-- gripper hitting ground and then changing the angle is a problem
+- MOST IMPORTANT: graspoing iteration terminates too early, maybe because has_object triggers wrongly
+- why grasped and then immediately dropped again   A:  wrong if statement, solved by asking for 'has_object'   CHECK
+- gripper hitting ground and then changing the angle is a problem, - maybe change maximum fore of robot joints
 
+- randomize position and orientation of object
 - camera perspective to see gripper earlier
 - rewards need to be smaller or something else. iteration stops when rewards are too high, also check rewards
 - neural network: try residual layers
