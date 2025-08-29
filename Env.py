@@ -110,8 +110,7 @@ class Env:
             self.robot.close_gripper()
             for _ in range(30):
                 self.step_simulation()
-            has_object=self.robot.gripper.has_object()
-            if has_object:
+            if self.robot.gripper.has_object():
                 delta[0]=-0.5
 
         elif gr_delta=='open':

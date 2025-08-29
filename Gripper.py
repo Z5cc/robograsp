@@ -67,16 +67,21 @@ class Gripper():
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
         return joint_state[1]
     
-    def get_torque(self):
+    def get_torque_and_width(self):
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
-        return joint_state[3]
+        return joint_state[3], joint_state[]
 
-    def has_object(self,threshold=1):
-        gripper_torque = self.get_torque()
-        if gripper_torque>threshold:
-            return True
-        else:
-            return False
+    def has_object(self, old_width=None, torque_THOLD=1, delta_THOLD=0.001):
+        torque, width = self.get_torque_and_width()
+        
+        torque_ok = torque>torque_THOLD
+
+        if old_width==None:
+            old_width = self.gripper_range[1]
+        delta = old_width-width
+        delta_ok = delta<delta_THOLD
+
+        return torque_ok and delta_ok
         
     
 
