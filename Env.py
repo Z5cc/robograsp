@@ -104,18 +104,34 @@ class Env:
 
 
     def step_move(self, delta, gr_delta):
-        has_object=False
+        
         # move gripper
+        graspable=False
+        gripper_closed=False
         if gr_delta=='close':
             self.robot.close_gripper()
-            for _ in range(30):
-                self.step_simulation()
-            if self.robot.gripper.has_object():
+            old_angle = self.robot.gripper.get_angle()
+            while not (gripper_closed or has_object_counter==4):
+                for _ in range(30):
+                    self.step_simulation()
+                has_object, old_angle = self.robot.gripper.has_object(old_angle)
+                if has_object:
+                    if has_object_last_it == True:
+                        has_object_counter+=1
+                    else:
+                        has_object_counter=1
+                    has_object_last_it = True
+                else:
+                    has_object_last_it = False
+                
+                gripper_closed = self.robot.gripper.gripper_closed()
+                
+
+            if has_object_counter==4:
                 delta[0]=-0.5
 
         elif gr_delta=='open':
             self.robot.open_gripper()
-
         else:
             self.robot.move_gripper(gr_delta)
         
@@ -124,7 +140,7 @@ class Env:
         for _ in range(30):
             self.step_simulation()
         
-        return self.get_observation(), has_object
+        return self.get_observation(), graspable
 
 
     def step_simulation(self):

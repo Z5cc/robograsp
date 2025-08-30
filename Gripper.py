@@ -63,25 +63,35 @@ class Gripper():
         open_length = 0.010 + 0.1143*math.sin(0.715-open_angle)
         return open_length
     
+    def get_angle(self):
+        joint_state = p.getJointState(self.id, self.mimic_parent_id)
+        return joint_state[0]
+    
     def get_velocity(self):
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
         return joint_state[1]
     
-    def get_torque_and_width(self):
+    def get_torque(self):
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
-        return joint_state[3], joint_state[]
+        return joint_state[3]
 
-    def has_object(self, old_width=None, torque_THOLD=1, delta_THOLD=0.001):
-        torque, width = self.get_torque_and_width()
+    # regarding delta_THOLD: 0.01 rad are equivalent to 0.001 m
+    def has_object(self, old_angle, torque_THOLD=1, angle_THOLD=0.794, delta_THOLD=0.005):
+        torque = self.get_torque()
+        angle = self.get_angle()
         
         torque_ok = torque>torque_THOLD
+        angle_ok = angle<angle_THOLD
+        delta = old_angle-angle
+        delta_ok = abs(delta)<delta_THOLD
+        if delta_ok and angle_ok:
+            print('OK')
 
-        if old_width==None:
-            old_width = self.gripper_range[1]
-        delta = old_width-width
-        delta_ok = delta<delta_THOLD
-
-        return torque_ok and delta_ok
+        has_object = torque_ok and angle_ok and delta_ok
+        return has_object, old_angle
+    
+    def gripper_closed(self):
+        return self.get_angle()<0.8 # 0.8rad is about 0.001m opening length
         
     
 
