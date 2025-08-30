@@ -2,6 +2,7 @@ TODOS
 - MOST IMPORTANT: grasping iteration terminates too early, maybe because has_object triggers wrongly
 - why grasped and then immediately dropped again   A:  wrong if statement, solved by asking for 'has_object'   CHECK
 - gripper hitting ground and then changing the angle is a problem, - maybe change maximum force of robot joints
+- IMPORTANT: maybe no heuristic for moving gripper closer to object, but reward distance to object, maybe also penalize how far away normal of gripper hits from object, if object hit by no ray
 
 - randomize position and orientation of object
 - camera perspective to see gripper earlier

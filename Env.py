@@ -113,9 +113,9 @@ class Env:
             old_angle = self.robot.gripper.get_angle()
             c=0
             while not gripper_closed:
-                for _ in range(30):
+                for _ in range(60):
                     self.step_simulation()
-                has_object, old_angle = self.robot.gripper.has_object(old_angle)
+                has_object = self.robot.gripper.has_object()
                 c=c+1 if has_object else 0
                 gripper_closed = self.robot.gripper.gripper_closed()
 

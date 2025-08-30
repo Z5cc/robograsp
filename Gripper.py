@@ -75,21 +75,15 @@ class Gripper():
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
         return joint_state[3]
 
-    # regarding angle_THOLD: 0.794rad are 0.001m in absolute
+    # regarding angle_THOLD: 0.785rad are 0.002m in absolute, smaller angle -> bigger open_width
     # regarding delta_THOLD: 0.01rad are equivalent to 0.001m in relative
-    def has_object(self, old_angle, torque_THOLD=1, angle_THOLD=0.794, delta_THOLD=0.01):
+    def has_object(self, torque_THOLD=1, angle_THOLD=0.785):
         torque = self.get_torque()
         angle = self.get_angle()
-        
-        torque_ok = torque>torque_THOLD
-        angle_ok = angle<angle_THOLD
-        delta = old_angle-angle
-        delta_ok = abs(delta)<delta_THOLD
-        if delta_ok and angle_ok:
-            print('OK')
 
-        has_object = torque_ok and angle_ok and delta_ok
-        return has_object, old_angle
+        if angle<angle_THOLD:
+            print('OK')
+        return torque>torque_THOLD and angle<angle_THOLD
     
     def gripper_closed(self):
         return self.get_angle()<0.8 # 0.8rad is about 0.001m opening length
