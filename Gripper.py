@@ -75,8 +75,9 @@ class Gripper():
         joint_state = p.getJointState(self.id, self.mimic_parent_id)
         return joint_state[3]
 
-    # regarding delta_THOLD: 0.01 rad are equivalent to 0.001 m
-    def has_object(self, old_angle, torque_THOLD=1, angle_THOLD=0.794, delta_THOLD=0.005):
+    # regarding angle_THOLD: 0.794rad are 0.001m in absolute
+    # regarding delta_THOLD: 0.01rad are equivalent to 0.001m in relative
+    def has_object(self, old_angle, torque_THOLD=1, angle_THOLD=0.794, delta_THOLD=0.01):
         torque = self.get_torque()
         angle = self.get_angle()
         
