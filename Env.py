@@ -111,7 +111,7 @@ class Env:
         if gr_delta=='close':
             self.robot.close_gripper()
             old_angle = self.robot.gripper.get_angle()
-            c=0
+            c=0 # keep the c variable though everything could be done by doing more simulation steps for extensibility regarding delta_angle
             while not gripper_closed:
                 for _ in range(60):
                     self.step_simulation()
