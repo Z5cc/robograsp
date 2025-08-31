@@ -107,15 +107,14 @@ class Env:
         
         # move gripper
         graspable=False
-        gr_closed=False
         if gr_delta=='close':
             self.robot.close_gripper()
-            c=0 # keep the c variable though everything could be done by doing more simulation steps for extensibility regarding delta_angle
-            while not gr_closed:
+            c=0
+            while not self.robot.gripper.gr_closed():
+                self.robot.gripper.save_angle()
                 for _ in range(60):
                     self.step_simulation()
                 c=c+1 if self.robot.gripper.has_object() else 0
-                gr_closed = self.robot.gripper.gr_closed()
 
                 if c==4:
                     graspable=True
