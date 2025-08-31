@@ -187,5 +187,21 @@ class Gripper():
         delta = outer_shortest_hit - inner_shortest_hit
         graspable = inner_shortest_hit < graspable_reach
         p.removeAllUserDebugItems()
-        return object_hit, delta, graspable
+
+        d = min(min(outer_shortest_hit, inner_shortest_hit)-graspable_reach,0)
+        return object_hit, d, delta, graspable
     
+
+    def ray_offset(self):
+        # get object position
+        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.object.id)
+
+        # get straight
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id,self.base_link_id)
+        rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
+        gr_forw = rot_matrix[:, 2]
+
+        obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
+        cross = np.cross(gr_forw, obj_pos-gr_pos)
+        offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
+        return offset
