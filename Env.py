@@ -71,8 +71,7 @@ class Env:
 
     def step(self, action):
         gr_delta = 'open'
-        dx = +0.005
-        dy,dz = 0,0
+        dx,dy,dz = 0,0,0
         droll,dpitch,dyaw=0,0,0
 
         if action==0: # grasp
@@ -92,7 +91,7 @@ class Env:
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         obs, graspable = self.step_move(delta,gr_delta)
-        reward = self.get_reward()
+        reward = self.get_reward(gr_delta)
         print(f'reward:{reward}\n')
 
         info = None
@@ -156,30 +155,40 @@ class Env:
             assert self.camera is None            
         return depth
     
-    def get_reward(self):
+    def cap_one(self,x,maxi=1,alpha=10):
+        """
+        maxi=1: cap x to 1
+        alpha=10: maxi is around 0.5m
+        """
+        return maxi*(-1 + 2/(1+math.exp(-alpha*x)))
+
+    
+    def get_reward(self,gr_delta):
+
         lo, hi = p.getAABB(self.object.id)
         lowest_point_z = lo[2]
         # 1: successfull grasp reward
         if lowest_point_z>0.05:
-            return 50
+            return 100
         
         object_hit,d,delta,graspable = self.robot.gripper.ray_tests()
-        d_rew = -d # still optimize that function
+        d_rew = self.cap_one(d,maxi=-1)
+        op_rew = -1 if gr_delta=='close' else 0
         if object_hit:
-            # 2: object ready to be grasped
+            # 2: object ready to be grasped [necessety: r<1]
             if graspable:
-                return d_rew + 10
-            # 3: object in front of gripper
+                return op_rew + d_rew + 0.95
+            # 3: object in front of gripper [necessety: r<1]
             elif delta>0.060:
-                return d_rew + 2
+                return op_rew + d_rew + 0.5
             elif 0<delta<0.060:
-                return d_rew + 0.5+(1.5/0.060)*delta
+                return op_rew + d_rew + 0.1+(0.4/0.060)*delta
             else:
-                return d_rew + 0.5
+                return op_rew + d_rew + 0.1
         else:
             # 4: object not in front of gripper
-            offset = self.robot.gripper.ray_offset() 
-            return offset * -1 # still optimize that function
+            offset = self.robot.gripper.ray_offset()
+            return op_rew + self.cap_one(offset,maxi=-10)
 
 
 
