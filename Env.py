@@ -155,12 +155,8 @@ class Env:
             assert self.camera is None            
         return depth
     
-    def cap_one(self,x,maxi=1,alpha=10):
-        """
-        maxi=1: cap x to 1
-        alpha=10: maxi is around 0.5m
-        """
-        return maxi*(-1 + 2/(1+math.exp(-alpha*x)))
+    def distance_function(self,x,rew_at_one=-50):
+        return rew_at_one*x
 
     
     def get_reward(self,gr_delta):
@@ -171,24 +167,32 @@ class Env:
         if lowest_point_z>0.05:
             return 100
         
-        object_hit,d,delta,graspable = self.robot.gripper.ray_tests()
-        d_rew = self.cap_one(d,maxi=-1)
-        op_rew = -1 if gr_delta=='close' else 0
-        if object_hit:
-            # 2: object ready to be grasped [necessety: r<1]
-            if graspable:
-                return op_rew + d_rew + 0.95
-            # 3: object in front of gripper [necessety: r<1]
-            elif delta>0.060:
-                return op_rew + d_rew + 0.5
-            elif 0<delta<0.060:
-                return op_rew + d_rew + 0.1+(0.4/0.060)*delta
-            else:
-                return op_rew + d_rew + 0.1
+
         else:
-            # 4: object not in front of gripper
-            offset = self.robot.gripper.ray_offset()
-            return op_rew + self.cap_one(offset,maxi=-10)
+            r_cap = -10
+            r_op = -5 if gr_delta=='close' else 0
+            r_gr = 0
+
+            object_hit,d,delta,graspable = self.robot.gripper.ray_tests()
+            if object_hit:
+                r_d = self.distance_function(d)
+
+                # 2: object ready to be grasped [necessity: r<1]
+                if graspable:
+                    r_gr = 10
+                # 3: object in front of gripper [necessity: r<1]
+                elif delta>0.060:
+                    r_gr = 5
+                elif 0<delta<0.060:
+                    r_gr = 1+(4/0.060)*delta
+                else:
+                    r_gr = 1
+            else:
+                # 4: object not in front of gripper [necessity: r<1]
+                offset = self.robot.gripper.ray_offset()
+                r_d = self.distance_function(offset)
+
+            return r_d + r_op + r_cap + r_gr
 
 
 

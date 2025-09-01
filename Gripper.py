@@ -188,7 +188,7 @@ class Gripper():
         graspable = inner_shortest_hit < graspable_reach
         p.removeAllUserDebugItems()
 
-        d = min(min(outer_shortest_hit, inner_shortest_hit)-graspable_reach,0)
+        d = max(min(outer_shortest_hit, inner_shortest_hit)-graspable_reach,0)
         return object_hit, d, delta, graspable
     
 
