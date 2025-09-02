@@ -547,11 +547,6 @@
     <origin rpy="0 1.57079632679 0" xyz="0 0 0"/>
   </joint>
 
-<!--  <joint name="arm_gripper_joint" type="fixed">-->
-<!--    <parent link="ee_link"/>-->
-<!--    <child link="robotiq_140_robotiq_arg2f_base_link"/>-->
-<!--    <origin rpy="-1.57 1.57 -1.57" xyz="0.0 0.0 0.0"/>-->
-<!--  </joint>-->
 
   <!-- connect arm to world -->
   <joint name="world_arm_joint" type="fixed">
@@ -559,6 +554,11 @@
     <child link="base_link"/>
     <origin rpy="0.0 0.0 0" xyz="0 0 0"/>
   </joint>
+
+
+
+
+
 
 
 
@@ -584,6 +584,23 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
   </link>
+
+
+
+
+
+<!--################################################
+  ########          CAMERA                          #####
+  ####################################################-->
+
+<!-- ee_camera_joint -->
+
+<!-- camera_link -->
+
+
+<!-- ee_lens_joint -->
+
+<!-- lens_link -->
 
 
 

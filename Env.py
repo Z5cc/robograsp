@@ -126,7 +126,7 @@ class Env:
             self.robot.move_gripper(gr_delta)
         
         # move arm
-        self.robot.move_ee(delta)
+        self.robot.move_tcp(delta)
         for _ in range(30):
             self.step_simulation()
         
@@ -240,9 +240,9 @@ def make_env():
     rob_orn = (0, 0, 0)
     ll_t = [-0.15,-0.15,0.03] # x,y,z
     ul_t = [0.15,0.15,0.25]
-    ee_center = np.array([0,0.05,0.25]) # center for starting position of end effector
-    ee_tar = np.array(obj_pos) # target position for end effector
-    ee_up = np.array([0,-1,0])
+    tcp_center = np.array([0,0.05,0.25]) # center for starting position of tcp
+    tcp_tar = np.array(obj_pos) # target position for tcp
+    tcp_up = np.array([0,-1,0])
     cone_tar = np.array(obj_pos) # target position for the restriction cone
     cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
 
@@ -250,7 +250,7 @@ def make_env():
 
     object = Object(obj_pos, ll_t, ul_t)
     camera = Camera(cam_pos, cam_tar, cam_up, near, far, size, fov)
-    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, ee_center, ee_tar, ee_up, cone_tar, cone_phi,object)
+    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi,object)
 
 
 
