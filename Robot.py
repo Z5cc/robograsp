@@ -36,6 +36,7 @@ class Robot:
         self.j_names = []
         self.j_maxForce = []
         self.j_maxVelocity = []
+        self.j_dampings = 13*[0.00001] # numeric damping values for inverse kinematic solver, no physical damping values
         self.controllable_joints = []
         for i in range(numJoints):
             info = p.getJointInfo(self.id, i)
@@ -67,7 +68,7 @@ class Robot:
         state_new = self.delta_to_absolute(delta)
         pos = state_new[0:3]
         orn = state_new[3:7]
-        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn)
+        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn, jointDamping=self.j_dampings)
         # arm
         for i, joint_id in enumerate(self.arm_controllable_joints):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
@@ -179,7 +180,7 @@ class Robot:
             p.resetJointState(self.id, joint_id, rest_pose)
 
         # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn)
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn, jointDamping=self.j_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
 
