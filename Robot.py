@@ -27,6 +27,7 @@ class Robot:
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         
         self.arm_num_dofs = 6
+        self.arm_rest_poses = [-1.8427108144422384,-1.783986598255091,1.9232743283452045,-1.9004039537122694,-1.5180998101236258,-0.2668835598602039]
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
         self.arm_ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
         self.arm_jr = [u-l for u,l in zip(self.arm_ul,self.arm_ll)]
@@ -35,7 +36,6 @@ class Robot:
         self.j_names = []
         self.j_maxForce = []
         self.j_maxVelocity = []
-        self.j_dampings = 13*[0.00001]
         self.controllable_joints = []
         for i in range(numJoints):
             info = p.getJointInfo(self.id, i)
@@ -67,8 +67,7 @@ class Robot:
         state_new = self.delta_to_absolute(delta)
         pos = state_new[0:3]
         orn = state_new[3:7]
-        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn,
-                                                    jointDamping=self.j_dampings)
+        joint_poses = p.calculateInverseKinematics(self.id, self.eef_id, pos, orn)
         # arm
         for i, joint_id in enumerate(self.arm_controllable_joints):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
@@ -174,13 +173,17 @@ class Robot:
         for joint_id in self.arm_controllable_joints:
             p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
 
-        # 2. p.resetJointState
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn,
-                                                    jointDamping=self.j_dampings)
+        # 2. p.resetJointState to precalculated arm positions.
+        # this intermediate fixed positions are needed, so that in next step no undesired positions are returned by InverseKinematics
+        for rest_pose, joint_id in zip(self.arm_rest_poses, self.arm_controllable_joints):
+            p.resetJointState(self.id, joint_id, rest_pose)
+
+        # 3. p.resetJointState to new calculated arm positions
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.eef_id, self.ee_center, orn)
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.resetJointState(self.id, joint_id, rest_pose)
 
-        # 3. drive motors to reseted joint states to hold new position
+        # 4. drive motors to reseted joint states to hold new position
         for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, rest_pose,
                             force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
@@ -188,7 +191,7 @@ class Robot:
         # drive gripper to default open position
         self.gripper.reset()
 
-        # 4. let world settle -> done in env, because besides robot object also needs to settle
+        # 5. let world settle -> done in env, because besides robot object also needs to settle
 
 
     def get_joint_obs(self):
