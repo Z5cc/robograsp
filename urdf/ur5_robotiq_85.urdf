@@ -579,7 +579,7 @@
   <link name="tcp_link">
     <visual>
       <geometry>
-        <box size="0.01 0.01 0.01"/>
+        <box size="0.005 0.005 0.005"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
@@ -621,11 +621,21 @@
   </link>
 
 
-<!-- camera_lens_joint -->
+  <joint name="camera_lens_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="lens_link"/>
+    <origin rpy="0 -1.04719755119 1.57079632679" xyz="0 0.042 0.012"/>
+  </joint>
 
-<!-- lens_link -->
+  <link name="lens_link">
+    <visual>
+      <geometry>
+        <box size="0.005 0.005 0.005"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+  </link>
 
 
 
 </robot>
-
