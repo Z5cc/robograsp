@@ -36,6 +36,7 @@ class Env:
         self.planeID = p.loadURDF("plane.urdf")
         self.object.load()
         self.robot.load()
+        self.camera.load(robot)
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
@@ -228,17 +229,14 @@ def make_env():
 
     # camera doesnt need to film whole action area of robot, robot should learn not to leave camera area
     # also: it is good when camera looks at 0,0,0. when center of object leaves action area of robot, env is reseted
-    cam_pos = (0.20, 0.20, 0.15)
-    cam_tar = (0,0,0)
-    cam_up = (0,0,1)
-    near = 0.01 # 0.1 means anything closer than 10 cm is invisible
-    far = 0.6 # anything further than this is alsodefault fovdefault fov invisible
+    near = 0.001 # 0.1 means anything closer than 10 cm is invisible
+    far = 0.6 # anything further than this is also default fovdefault fov invisible
     size = (32, 32)
-    fov = 40
+    fov = 60
 
     rob_pos = (0, 0.5, 0)
     rob_orn = (0, 0, 0)
-    ll_t = [-0.15,-0.15,0.03] # x,y,z
+    ll_t = [-0.15,-0.15,0.01] # x,y,z
     ul_t = [0.15,0.15,0.25]
     tcp_center = np.array([0,0.05,0.25]) # center for starting position of tcp
     tcp_tar = np.array(obj_pos) # target position for tcp
@@ -249,8 +247,8 @@ def make_env():
 
 
     object = Object(obj_pos, ll_t, ul_t)
-    camera = Camera(cam_pos, cam_tar, cam_up, near, far, size, fov)
     robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi,object)
+    camera = Camera(near, far, size, fov)
 
 
 

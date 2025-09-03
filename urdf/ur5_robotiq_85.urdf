@@ -624,7 +624,7 @@
   <joint name="camera_lens_joint" type="fixed">
     <parent link="camera_link"/>
     <child link="lens_link"/>
-    <origin rpy="0 -1.04719755119 1.57079632679" xyz="0 0.042 0.012"/>
+    <origin rpy="0 -1.4 1.57079632679" xyz="0 0.045 0.014"/>
   </joint>
 
   <link name="lens_link">

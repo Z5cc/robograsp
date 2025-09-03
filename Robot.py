@@ -53,6 +53,8 @@ class Robot:
                 self.tcp_id = i # link index, not joint index. however the joint index i will have same value as link index
             if name == 'robotiq_85_base_joint':
                 gripper_base_link_id = i
+            if name == 'camera_lens_joint':
+                self.lens_id = i
         assert len(self.controllable_joints) >= self.arm_num_dofs
         self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
         
