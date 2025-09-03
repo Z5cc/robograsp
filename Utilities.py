@@ -58,10 +58,11 @@ class Camera:
         cam_pos, cam_orn, *_ = p.getLinkState(self.robot_id, self.lens_id)
         rot_matrix = np.array(p.getMatrixFromQuaternion(cam_orn)).reshape(3, 3)
         forward = rot_matrix[:, 0]
+        up = rot_matrix[:, 2]
         cam_tar = cam_pos+forward
 
         aspect = self.width / self.height
-        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, (0,0,1))
+        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, up)
         self.projection_matrix = p.computeProjectionMatrixFOV(self.fov, aspect, self.near, self.far)
 
         _view_matrix = np.array(self.view_matrix).reshape((4, 4), order='F')

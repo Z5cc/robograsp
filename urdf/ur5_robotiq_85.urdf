@@ -544,7 +544,7 @@
   <joint name="robotiq_85_base_joint" type="fixed">
     <parent link="ee_link"/>
     <child link="robotiq_arg2f_base_link"/>
-    <origin rpy="0 1.57079632679 0" xyz="0.0135 0 0"/>
+    <origin rpy="0 1.57079632679 0" xyz="0.0 0 0"/>
   </joint>
 
 
@@ -573,16 +573,16 @@
   <joint name="ee_tcp_joint" type="fixed">
     <parent link="ee_link"/>
     <child link="tcp_link"/>
-    <origin rpy="0 0 0" xyz="0.16 0 0"/>
+    <origin rpy="0 0 0" xyz="0.14 0 0"/>
   </joint>
 
   <link name="tcp_link">
-    <visual>
+    <!-- <visual>
       <geometry>
         <box size="0.005 0.005 0.005"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-    </visual>
+    </visual> -->
   </link>
 
 
@@ -593,38 +593,10 @@
   ########          CAMERA                          #####
   ####################################################-->
 
-  <joint name="ee_camera_joint" type="fixed">
+  <joint name="ee_lens_joint" type="fixed">
     <parent link="ee_link"/>
-    <child link="camera_link"/>
-    <origin rpy="1.57079632679 0.0 1.57079632679" xyz="0.0 0.0 0.0"/>
-  </joint>
-
-  <link name="camera_link">
-    <visual>
-      <geometry>
-        <mesh filename="../meshes/camera/visual/camera.obj"/>
-      </geometry>
-      <material name="LightGrey">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
-    </visual>
-    <collision>
-      <geometry>
-        <mesh filename="../meshes/camera/collision/camera.stl"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="0.16"/>
-      <origin rpy="0 0 0" xyz="0.0 0.007 0.005"/>
-      <inertia ixx="0.000111" ixy="0.0" ixz="0.0" iyy="0.000070" iyz="0.000003" izz="0.000165"/>
-    </inertial>
-  </link>
-
-
-  <joint name="camera_lens_joint" type="fixed">
-    <parent link="camera_link"/>
     <child link="lens_link"/>
-    <origin rpy="0 -1.4 1.57079632679" xyz="0 0.045 0.014"/>
+    <origin rpy="0 0.25 0" xyz="0.05 0.0 0.04"/>
   </joint>
 
   <link name="lens_link">
