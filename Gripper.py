@@ -6,9 +6,10 @@ from collections import namedtuple
 
 
 class Gripper():
-    def __init__(self, id, base_link_id, j_names, j_maxForce, j_maxVelocity, object, max_open=0.05):
+    def __init__(self, id, links, j_names, j_maxForce, j_maxVelocity, object, max_open=0.05):
         self.id = id
-        self.base_link_id = base_link_id
+        self.links = links
+        self.id_base_link = links['robotiq_arg2f_base_link']
         self.j_names = j_names
         self.j_maxForce = j_maxForce
         self.j_maxVelocity = j_maxVelocity
@@ -97,7 +98,7 @@ class Gripper():
 
 
     def local_to_global(self, pt_local):
-        pos, orn, *_ = p.getLinkState(self.id,self.base_link_id)
+        pos, orn, *_ = p.getLinkState(self.id,self.id_base_link)
         pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
         return pt_world
 
@@ -139,7 +140,7 @@ class Gripper():
         return outer_froms, inner_froms
     
     def get_tos(self,froms, ray_length):
-        pos, orn, *_ = p.getLinkState(self.id,self.base_link_id)
+        pos, orn, *_ = p.getLinkState(self.id,self.id_base_link)
         rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
         forward = rot_matrix[:, 2]
         tos = [f + forward*ray_length for f in froms]
@@ -197,7 +198,7 @@ class Gripper():
         obj_pos, obj_orn = p.getBasePositionAndOrientation(self.object.id)
 
         # get straight
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id,self.base_link_id)
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id,self.id_base_link)
         rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
         gr_forw = rot_matrix[:, 2]
 
@@ -205,3 +206,9 @@ class Gripper():
         cross = np.cross(gr_forw, obj_pos-gr_pos)
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
         return offset
+    
+    # def distance_tcp_object(self):
+    #     # coordinate of tcp
+    #     gr_pos, gr_orn, *_ = p.getLinkState(self.id,self.tcp)
+    #     # get object position
+    #     obj_pos, obj_orn = p.getBasePositionAndOrientation(self.object.id)

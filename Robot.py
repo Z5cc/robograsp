@@ -7,6 +7,18 @@ from Gripper import Gripper
 
 
 
+
+class Joint():
+    def __init__(self, index, joint_type, max_force, max_velocity, controllable, numeric_damping=0.00001):
+        self.index = index
+        self.joint_type = joint_type
+        self.max_force = max_force
+        self.max_velocity = max_velocity
+        self.controllable = controllable
+        self.numeric_damping = numeric_damping
+
+
+
 class Robot:
 
     def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi, object):
@@ -25,40 +37,42 @@ class Robot:
     def load(self):
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
-        
         self.arm_num_dofs = 6
         self.arm_rest_poses = [-1.8427108144422384,-1.783986598255091,1.9232743283452045,-1.9004039537122694,-1.5180998101236258,-0.2668835598602039]
         self.arm_ll = [-3.14159265359,-3,-3.14159265359,-3.14159265359,-3.14159265359,-3.14159265359]
         self.arm_ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
         self.arm_jr = [u-l for u,l in zip(self.arm_ul,self.arm_ll)]
 
+        self.links = {}
+        self.joints = {}
+        self.joints_controllable = {}
+        self.joints_controllable_arm = {}
+
         numJoints = p.getNumJoints(self.id)
-        self.j_names = []
-        self.j_maxForce = []
-        self.j_maxVelocity = []
-        self.j_dampings = 13*[0.00001] # numeric damping values for inverse kinematic solver, no physical damping values
-        self.controllable_joints = []
         for i in range(numJoints):
             info = p.getJointInfo(self.id, i)
-            name = info[1].decode("utf-8")
-            jointType = info[2] # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
-            controllable = (jointType != p.JOINT_FIXED)
-            self.j_names.append(name)
-            self.j_maxForce.append(info[10])
-            self.j_maxVelocity.append(info[11])
+
+            joint_name = info[1].decode("utf-8")
+            link_name = info[12].decode("utf-8")
+
+            index = info[0]
+            type = info[2] # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
+            max_force = info[10]
+            max_vel = info[11]
+            controllable = (type != p.JOINT_FIXED)
+            joint = Joint(index,type,max_force,max_vel,controllable)
+
+            self.links[link_name] = index
+            self.joints[joint_name] = joint
             if controllable:
-                self.controllable_joints.append(i)
-                p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
-            if name == 'ee_tcp_joint':
-                self.tcp_id = i # link index, not joint index. however the joint index i will have same value as link index
-            if name == 'robotiq_85_base_joint':
-                gripper_base_link_id = i
-            if name == 'ee_lens_joint':
-                self.lens_id = i
-        assert len(self.controllable_joints) >= self.arm_num_dofs
-        self.arm_controllable_joints = self.controllable_joints[:self.arm_num_dofs]
+                self.joints_controllable[joint_name] = joint
+                if len(self.joints_controllable)<=self.arm_num_dofs:
+                    self.joints_controllable_arm[joint_name] = joint
+
+        for i in [joint.index for joint in self.joints_controllable.values()]:
+            p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         
-        self.gripper = Gripper(self.id, gripper_base_link_id, self.j_names, self.j_maxForce, self.j_maxVelocity, self.object)
+        self.gripper = Gripper(self.id, self.links , self.j_names, self.j_maxForce, self.j_maxVelocity, self.object)
         
 
     

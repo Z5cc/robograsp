@@ -159,7 +159,6 @@ class Env:
     def distance_function(self,x,rew_at_one=-50):
         return rew_at_one*x
 
-    
     def get_reward(self,gr_delta):
 
         lo, hi = p.getAABB(self.object.id)
