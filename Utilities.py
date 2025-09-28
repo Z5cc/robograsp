@@ -49,7 +49,7 @@ class Camera:
 
     def load(self, robot):
         self.robot_id = robot.id
-        self.lens_id = robot.lens_id
+        self.lens_id = robot.link_map['lens_link']
 
         
 

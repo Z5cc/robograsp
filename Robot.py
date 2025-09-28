@@ -9,11 +9,11 @@ from Gripper import Gripper
 
 
 class Joint():
-    def __init__(self, index, joint_type, max_force, max_velocity, controllable, numeric_damping=0.00001):
+    def __init__(self, index, joint_type, max_force, max_vel, controllable, numeric_damping=0.00001):
         self.index = index
         self.joint_type = joint_type
         self.max_force = max_force
-        self.max_velocity = max_velocity
+        self.max_vel = max_vel
         self.controllable = controllable
         self.numeric_damping = numeric_damping
 
@@ -43,11 +43,15 @@ class Robot:
         self.arm_ul = [0,-0.5,3.14159265359,3.14159265359,3.14159265359,3.14159265359]
         self.arm_jr = [u-l for u,l in zip(self.arm_ul,self.arm_ll)]
 
-        self.links = {}
-        self.joints = {}
-        self.joints_controllable = {}
-        self.joints_controllable_arm = {}
+        self.link_map = {} # {link_name: index}
+        self.joint_map = {} # {joint_name: index}
 
+        self.joints = {} # {index: Joint}
+        self.joints_dampings = []
+
+        self.joints_controllable_ids = [] # [indeces]
+        self.joints_controllable_arm_ids = [] # [indeces]
+        
         numJoints = p.getNumJoints(self.id)
         for i in range(numJoints):
             info = p.getJointInfo(self.id, i)
@@ -56,23 +60,27 @@ class Robot:
             link_name = info[12].decode("utf-8")
 
             index = info[0]
-            type = info[2] # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
+            joint_type = info[2] # JOINT_REVOLUTE, JOINT_PRISMATIC, JOINT_SPHERICAL, JOINT_PLANAR, JOINT_FIXED
             max_force = info[10]
             max_vel = info[11]
-            controllable = (type != p.JOINT_FIXED)
-            joint = Joint(index,type,max_force,max_vel,controllable)
+            controllable = (joint_type != p.JOINT_FIXED)
+            joint = Joint(index,joint_type,max_force,max_vel,controllable)
+            self.joints_dampings.append(joint.numeric_damping)
 
-            self.links[link_name] = index
-            self.joints[joint_name] = joint
+            self.link_map[link_name] = index
+            self.joint_map[joint_name] = index
+            self.joints[index] = joint
+
             if controllable:
-                self.joints_controllable[joint_name] = joint
-                if len(self.joints_controllable)<=self.arm_num_dofs:
-                    self.joints_controllable_arm[joint_name] = joint
+                self.joints_controllable_ids.append(index)
+                if len(self.joints_controllable_ids)<=self.arm_num_dofs:
+                    self.joints_controllable_arm_ids.append(index)
 
-        for i in [joint.index for joint in self.joints_controllable.values()]:
-            p.setJointMotorControl2(self.id, i, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
+        for joint_id in self.joints_controllable_ids:
+            p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         
-        self.gripper = Gripper(self.id, self.links , self.j_names, self.j_maxForce, self.j_maxVelocity, self.object)
+        self.id_tcp_link = self.link_map['tcp_link']
+        self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints, self.object)
         
 
     
@@ -84,18 +92,18 @@ class Robot:
         state_new = self.delta_to_absolute(delta)
         pos = state_new[0:3]
         orn = state_new[3:7]
-        joint_poses = p.calculateInverseKinematics(self.id, self.tcp_id, pos, orn, jointDamping=self.j_dampings)
+        joint_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, pos, orn, jointDamping=self.joints_dampings)
         # arm
-        for i, joint_id in enumerate(self.arm_controllable_joints):
-            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_poses[i],
-                                    force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
+        for joint_pose, joint_id in zip(joint_poses, self.joints_controllable_arm_ids):
+            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_pose,
+                                    force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)
             
     def delta_to_absolute(self, delta):
         dt_TCP = np.array(delta[0:3])
         dr_TCP = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_TCP derived from intrinsic euler angles
 
         # 1. get current tcp pose in world frame
-        state_TCP = p.getLinkState(self.id, self.tcp_id)
+        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
         t = np.array(state_TCP[0])  # translation
         r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
         
@@ -187,23 +195,23 @@ class Robot:
         orn = R_new.as_quat().tolist()
 
         # 1. deactivate motors first to avoid driving back to old position after p.resetJointState
-        for joint_id in self.arm_controllable_joints:
+        for joint_id in self.joints_controllable_arm_ids:
             p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
 
         # 2. p.resetJointState to precalculated arm positions.
         # this intermediate fixed positions are needed, so that in next step no undesired positions are returned by InverseKinematics
-        for rest_pose, joint_id in zip(self.arm_rest_poses, self.arm_controllable_joints):
+        for rest_pose, joint_id in zip(self.arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
 
         # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.tcp_id, self.tcp_center, orn, jointDamping=self.j_dampings)
-        for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, self.tcp_center, orn, jointDamping=self.joints_dampings)
+        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
 
         # 4. drive motors to reseted joint states to hold new position
-        for rest_pose, joint_id in zip(arm_rest_poses, self.arm_controllable_joints):
+        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, rest_pose,
-                            force=self.j_maxForce[joint_id], maxVelocity=self.j_maxVelocity[joint_id])
+                            force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)
 
         # drive gripper to default open position
         self.gripper.reset()
@@ -218,5 +226,5 @@ class Robot:
             pos, vel, _, _ = p.getJointState(self.id, joint_id)
             positions.append(pos)
             velocities.append(vel)
-        tcp_pos = p.getLinkState(self.id, self.tcp_id)[0]
+        tcp_pos = p.getLinkState(self.id, self.id_tcp_link)[0]
         return dict(positions=positions, velocities=velocities, tcp_pos=tcp_pos)

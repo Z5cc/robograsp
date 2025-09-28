@@ -6,13 +6,13 @@ from collections import namedtuple
 
 
 class Gripper():
-    def __init__(self, id, links, j_names, j_maxForce, j_maxVelocity, object, max_open=0.05):
+    def __init__(self, id, link_map, joint_map, joints, object, max_open=0.05):
         self.id = id
-        self.links = links
-        self.id_base_link = links['robotiq_arg2f_base_link']
-        self.j_names = j_names
-        self.j_maxForce = j_maxForce
-        self.j_maxVelocity = j_maxVelocity
+        self.link_map = link_map
+        self.joint_map = joint_map
+        self.joints = joints
+        self.id_base_link = link_map['robotiq_arg2f_base_link']
+        self.joints = joints
         self.object = object
         self.gripper_range = [0, 0.085 if max_open>0.085 else max_open]
 
@@ -27,8 +27,8 @@ class Gripper():
         
         
     def __setup_mimic_joints__(self, mimic_parent_name, mimic_children_names):
-        self.mimic_parent_id = [joint_id for joint_id, name in enumerate(self.j_names) if name == mimic_parent_name][0]
-        self.mimic_child_multiplier = {joint_id: mimic_children_names[name] for joint_id, name in enumerate(self.j_names) if name in mimic_children_names}
+        self.mimic_parent_id = self.joint_map[mimic_parent_name]
+        self.mimic_child_multiplier = {self.joint_map[name]: mimic for name, mimic in mimic_children_names.items()}
 
         for joint_id, multiplier in self.mimic_child_multiplier.items():
             c = p.createConstraint(self.id, self.mimic_parent_id,
@@ -45,7 +45,7 @@ class Gripper():
         open_angle = 0.715 - math.asin((open_length - 0.010) / 0.1143)  # angle calculation
         # Control the mimic gripper joint(s)
         p.setJointMotorControl2(self.id, self.mimic_parent_id, p.POSITION_CONTROL, targetPosition=open_angle,
-                                force=self.j_maxForce[self.mimic_parent_id], maxVelocity=self.j_maxVelocity[self.mimic_parent_id])
+                                force=self.joints[self.mimic_parent_id].max_force, maxVelocity=self.joints[self.mimic_parent_id].max_vel)
         
 
     def reset(self):
