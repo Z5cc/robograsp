@@ -1,18 +1,43 @@
 import pybullet as p
-import glob
-from collections import namedtuple
-from attrdict import AttrDict
-import functools
-import torch
-import cv2
-from scipy import ndimage
 import numpy as np
 from pathlib import Path
 import pybullet_data
 import random
 
 
+class Camera:
+    def __init__(self, near, far, size, fov):
+        self.width, self.height = size
+        self.near, self.far = near, far
+        self.fov = fov
 
+        
+    def load(self, id_robot, id_lens_link):
+        self.id_robot = id_robot
+        self.id_lens_link = id_lens_link
+
+        
+    def shot(self):
+        cam_pos, cam_orn, *_ = p.getLinkState(self.id_robot, self.id_lens_link)
+        rot_matrix = np.array(p.getMatrixFromQuaternion(cam_orn)).reshape(3, 3)
+        forward = rot_matrix[:, 0]
+        up = rot_matrix[:, 2]
+        cam_tar = cam_pos+forward
+
+        aspect = self.width / self.height
+        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, up)
+        self.projection_matrix = p.computeProjectionMatrixFOV(self.fov, aspect, self.near, self.far)
+
+        _view_matrix = np.array(self.view_matrix).reshape((4, 4), order='F')
+        _projection_matrix = np.array(self.projection_matrix).reshape((4, 4), order='F')
+        self.tran_pix_world = np.linalg.inv(_projection_matrix @ _view_matrix)
+
+
+        # Get depth values using the OpenGL renderer
+        _w, _h, rgb, depth, seg = p.getCameraImage(self.width, self.height,
+                                                   self.view_matrix, self.projection_matrix,
+                                                   )
+        return rgb, depth, seg
 
 
 class Object:
@@ -36,42 +61,4 @@ class Object:
     def is_in_boundaries(self):
         x, y, _ = p.getBasePositionAndOrientation(self.id)[0]
         return self.ll[0] < x < self.ul[0] and self.ll[1] < y < self.ul[1]
-
-
-
-class Camera:
-    def __init__(self, near, far, size, fov):
-        self.width, self.height = size
-        self.near, self.far = near, far
-        self.fov = fov
-
-        
-
-    def load(self, robot):
-        self.robot_id = robot.id
-        self.lens_id = robot.link_map['lens_link']
-
-        
-
-
-    def shot(self):
-        cam_pos, cam_orn, *_ = p.getLinkState(self.robot_id, self.lens_id)
-        rot_matrix = np.array(p.getMatrixFromQuaternion(cam_orn)).reshape(3, 3)
-        forward = rot_matrix[:, 0]
-        up = rot_matrix[:, 2]
-        cam_tar = cam_pos+forward
-
-        aspect = self.width / self.height
-        self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, up)
-        self.projection_matrix = p.computeProjectionMatrixFOV(self.fov, aspect, self.near, self.far)
-
-        _view_matrix = np.array(self.view_matrix).reshape((4, 4), order='F')
-        _projection_matrix = np.array(self.projection_matrix).reshape((4, 4), order='F')
-        self.tran_pix_world = np.linalg.inv(_projection_matrix @ _view_matrix)
-
-
-        # Get depth values using the OpenGL renderer
-        _w, _h, rgb, depth, seg = p.getCameraImage(self.width, self.height,
-                                                   self.view_matrix, self.projection_matrix,
-                                                   )
-        return rgb, depth, seg
+    

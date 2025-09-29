@@ -1,15 +1,10 @@
-import time
-import math
-import random
-
 import numpy as np
 import pybullet as p
 import pybullet_data
 
-from Utilities import Object, Camera
+from Reward import Reward
+from Assets import Camera, Object
 from Robot import Robot
-from collections import namedtuple
-from attrdict import AttrDict
 from tqdm import tqdm
 
 
@@ -28,6 +23,7 @@ class Env:
         self.camera = camera
         self.object = object
         self.robot = robot
+        self.reward = Reward()
 
         # load
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
@@ -36,7 +32,8 @@ class Env:
         self.planeID = p.loadURDF("plane.urdf")
         self.object.load()
         self.robot.load()
-        self.camera.load(robot)
+        self.camera.load(self.robot.id, self.robot.link_map['lens_link'])
+        self.reward.load(self.robot.gripper.id, self.robot.gripper.id_base_link, self.object.id, self.robot.gripper.gripper_range)
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
@@ -155,46 +152,9 @@ class Env:
         else:
             assert self.camera is None            
         return depth
-    
-    def distance_function(self,x,rew_at_one=-50):
-        return rew_at_one*x
 
     def get_reward(self,gr_delta):
-
-        lo, hi = p.getAABB(self.object.id)
-        lowest_point_z = lo[2]
-        # 1: successfull grasp reward
-        if lowest_point_z>0.05:
-            return 100
-        
-
-        else:
-            r_cap = -10
-            r_op = -5 if gr_delta=='close' else 0
-            r_gr = 0
-
-            object_hit,d,delta,graspable = self.robot.gripper.ray_tests()
-            if object_hit:
-                r_d = self.distance_function(d)
-
-                # 2: object ready to be grasped [necessity: r<1]
-                if graspable:
-                    r_gr = 10
-                # 3: object in front of gripper [necessity: r<1]
-                elif delta>0.060:
-                    r_gr = 5
-                elif 0<delta<0.060:
-                    r_gr = 1+(4/0.060)*delta
-                else:
-                    r_gr = 1
-            else:
-                # 4: object not in front of gripper [necessity: r<1]
-                offset = self.robot.gripper.ray_offset()
-                r_d = self.distance_function(offset)
-
-            return r_d + r_op + r_cap + r_gr
-
-
+        return self.reward.get_reward(gr_delta)
 
 
 

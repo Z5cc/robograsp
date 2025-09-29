@@ -222,7 +222,7 @@ class Robot:
     def get_joint_obs(self):
         positions = []
         velocities = []
-        for joint_id in self.controllable_joints:
+        for joint_id in self.joints_controllable_ids:
             pos, vel, _, _ = p.getJointState(self.id, joint_id)
             positions.append(pos)
             velocities.append(vel)
