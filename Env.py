@@ -16,14 +16,14 @@ class Env:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object, camera=None, vis=False) -> None:
+    def __init__(self, robot, object, camera, reward, vis=False) -> None:
         self.vis = vis
         if self.vis:
             self.p_bar = tqdm(ncols=0, disable=False)
         self.camera = camera
         self.object = object
         self.robot = robot
-        self.reward = Reward()
+        self.reward = reward
 
         # load
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
@@ -33,7 +33,7 @@ class Env:
         self.object.load()
         self.robot.load()
         self.camera.load(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward.load(self.robot.gripper.id, self.robot.gripper.id_base_link, self.object.id, self.robot.gripper.gripper_range)
+        self.reward.load(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
@@ -183,7 +183,7 @@ class Env:
     
 
 
-def make_env():
+def make_env(GAMMA):
     obj_pos = (0,0,0)
 
     near = 0.001 # 0.1 means anything closer than 10 cm is invisible
@@ -206,9 +206,9 @@ def make_env():
     object = Object(obj_pos, ll_t, ul_t)
     robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi,object)
     camera = Camera(near, far, size, fov)
+    reward = Reward(GAMMA)
 
 
-
-    env = Env(robot, object, camera, vis=True)
+    env = Env(robot, object, camera, reward, vis=True)
     env.reset()
     return env

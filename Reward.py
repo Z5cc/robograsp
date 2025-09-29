@@ -3,58 +3,62 @@ import numpy as np
 
 
 class Reward:
-    def __init__(self):
-        pass
+    def __init__(self, gamma):
+        self.gamma = gamma
 
-    def load(self, id_gripper, id_base_link, id_object, gripper_range):
-        self.id_gripper = id_gripper
+    def load(self, id_robot, id_base_link, id_tcp_link, id_object, gripper_range):
+        self.id_robot = id_robot
         self.id_base_link = id_base_link
+        self.id_tcp_link = id_tcp_link
         self.id_object = id_object
         self.gripper_range = gripper_range
-
-    
+        self.potential_old = 0
 
     def get_reward(self,gr_delta):
+        return 1
 
-        lo, hi = p.getAABB(self.id_object)
-        lowest_point_z = lo[2]
-        # 1: successfull grasp reward
-        if lowest_point_z>0.05:
-            return 100
+        # lo, hi = p.getAABB(self.id_object)
+        # lowest_point_z = lo[2]
+        # # 1: successfull grasp reward
+        # if lowest_point_z>0.05:
+        #     return 100
         
 
-        else:
-            r_cap = -10
-            r_op = -5 if gr_delta=='close' else 0
-            r_gr = 0
+        # else:
+        #     r_cap = -10
+        #     r_op = -5 if gr_delta=='close' else 0
+        #     r_gr = 0
 
-            object_hit,d,delta,graspable = self.ray_tests()
-            if object_hit:
-                r_d = self.distance_function(d)
+        #     object_hit,d,delta,graspable = self.ray_tests()
+        #     if object_hit:
+        #         r_d = self.distance_function(d)
 
-                # 2: object ready to be grasped [necessity: r<1]
-                if graspable:
-                    r_gr = 10
-                # 3: object in front of gripper [necessity: r<1]
-                elif delta>0.060:
-                    r_gr = 5
-                elif 0<delta<0.060:
-                    r_gr = 1+(4/0.060)*delta
-                else:
-                    r_gr = 1
-            else:
-                # 4: object not in front of gripper [necessity: r<1]
-                offset = self.ray_offset()
-                r_d = self.distance_function(offset)
+        #         # 2: object ready to be grasped [necessity: r<1]
+        #         if graspable:
+        #             r_gr = 10
+        #         # 3: object in front of gripper [necessity: r<1]
+        #         elif delta>0.060:
+        #             r_gr = 5
+        #         elif 0<delta<0.060:
+        #             r_gr = 1+(4/0.060)*delta
+        #         else:
+        #             r_gr = 1
+        #     else:
+        #         # 4: object not in front of gripper [necessity: r<1]
+        #         offset = self.ray_offset()
+        #         r_d = self.distance_function(offset)
 
-            return r_d + r_op + r_cap + r_gr
+        #     return r_d + r_op + r_cap + r_gr
 
     def distance_function(self,x,rew_at_one=-50):
         return rew_at_one*x
 
 
+
+
+
     def local_to_global(self, pt_local):
-        pos, orn, *_ = p.getLinkState(self.id_gripper,self.id_base_link)
+        pos, orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
         pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
         return pt_world
 
@@ -96,7 +100,7 @@ class Reward:
         return outer_froms, inner_froms
     
     def get_tos(self,froms, ray_length):
-        pos, orn, *_ = p.getLinkState(self.id_gripper,self.id_base_link)
+        pos, orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
         rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
         forward = rot_matrix[:, 2]
         tos = [f + forward*ray_length for f in froms]
@@ -154,7 +158,7 @@ class Reward:
         obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
 
         # get straight
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id_gripper,self.id_base_link)
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
         rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
         gr_forw = rot_matrix[:, 2]
 
@@ -163,8 +167,10 @@ class Reward:
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
         return offset
     
-    # def distance_tcp_object(self):
-    #     # coordinate of tcp
-    #     gr_pos, gr_orn, *_ = p.getLinkState(self.id_gripper,self.tcp)
-    #     # get object position
-    #     obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+
+
+    
+    def distance_tcp_object(self):
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
+        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+        return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))

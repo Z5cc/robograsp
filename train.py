@@ -20,7 +20,7 @@ from Env import make_env
 
 
 
-env = make_env()
+
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -63,6 +63,7 @@ TAU = 0.005
 LR = 3e-4
 
 
+env = make_env(GAMMA)
 h, w = env.camera.height, env.camera.width
 n_actions = env.action_space_size
 policy_net = DQN(h, w, n_actions).to(device)
