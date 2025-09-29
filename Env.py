@@ -183,7 +183,7 @@ class Env:
     
 
 
-def make_env(GAMMA):
+def make_env(GAMMA=None):
     obj_pos = (0,0,0)
 
     near = 0.001 # 0.1 means anything closer than 10 cm is invisible
