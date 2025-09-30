@@ -12,46 +12,47 @@ class Reward:
         self.id_tcp_link = id_tcp_link
         self.id_object = id_object
         self.gripper_range = gripper_range
-        self.potential_old = 0
+        self.potential = 0
+
+    def reset(self):
+        self.potential = self.get_potential()
+
+
 
     def get_reward(self,gr_delta):
-        return 1
+        next_potential = self.get_potential()
+        r = self.gamma*next_potential-self.potential
+        self.potential = next_potential
+        return r
 
-        # lo, hi = p.getAABB(self.id_object)
-        # lowest_point_z = lo[2]
-        # # 1: successfull grasp reward
-        # if lowest_point_z>0.05:
-        #     return 100
-        
 
-        # else:
-        #     r_cap = -10
-        #     r_op = -5 if gr_delta=='close' else 0
-        #     r_gr = 0
+    def get_potential(self):
+        if self.successfull_grasp():
+            return 100
+        else:
+            return -2000*self.distance_tcp_object()
 
-        #     object_hit,d,delta,graspable = self.ray_tests()
-        #     if object_hit:
-        #         r_d = self.distance_function(d)
 
-        #         # 2: object ready to be grasped [necessity: r<1]
-        #         if graspable:
-        #             r_gr = 10
-        #         # 3: object in front of gripper [necessity: r<1]
-        #         elif delta>0.060:
-        #             r_gr = 5
-        #         elif 0<delta<0.060:
-        #             r_gr = 1+(4/0.060)*delta
-        #         else:
-        #             r_gr = 1
-        #     else:
-        #         # 4: object not in front of gripper [necessity: r<1]
-        #         offset = self.ray_offset()
-        #         r_d = self.distance_function(offset)
+    def distance_tcp_object(self):
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
+        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+        return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))
+    
+    def successfull_grasp(self):
+        lo, hi = p.getAABB(self.id_object)
+        lowest_point_z = lo[2]
+        return lowest_point_z>0.05
 
-        #     return r_d + r_op + r_cap + r_gr
 
-    def distance_function(self,x,rew_at_one=-50):
-        return rew_at_one*x
+
+
+
+
+
+
+
+
+
 
 
 
@@ -170,7 +171,4 @@ class Reward:
 
 
     
-    def distance_tcp_object(self):
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
-        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
-        return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))
+

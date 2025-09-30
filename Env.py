@@ -162,6 +162,7 @@ class Env:
     def reset(self):
         self.robot.reset()
         self.object.reset()
+        self.reward.reset()
         for _ in range(30):
             self.step_simulation()
 
