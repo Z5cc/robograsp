@@ -210,6 +210,6 @@ def make_env(GAMMA=None):
     reward = Reward(GAMMA)
 
 
-    env = Env(robot, object, camera, reward, vis=True)
+    env = Env(robot, object, camera, reward, vis=False)
     env.reset()
     return env

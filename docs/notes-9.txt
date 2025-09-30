@@ -1,0 +1,14 @@
+notes for neural network hyperparameters:
+
+-in general: F.relu necessary, because several linear function would result in one simple linear function, while several linear function with relu results in a one more complex function. relu after conv and linear layer
+-use conv3x3 only to have one less parameter to worry about
+-use pooling layers for translation invariance. (2x2 with stride 2)
+
+-position of pooling layer. first pooling layer after only one conv layer instead of after two conv layer works better because then whole network is closer to vgg16 shape. getting narrow fast and then get deep
+-only one linear layer works better than having two
+-having more or less channel does not do a favor. ending with channel size 16 for conv is really good
+
+
+TODO:
+-1. read about data ambigoution and what effects. then rotatate object random position etc.. open other DoF
+-2. reward optimization
