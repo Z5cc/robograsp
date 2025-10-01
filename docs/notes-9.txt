@@ -6,7 +6,7 @@ notes for neural network hyperparameters:
 
 -position of pooling layer. first pooling layer after only one conv layer instead of after two conv layer works better because then whole network is closer to vgg16 shape. getting narrow fast and then get deep
 -only one linear layer works better than having two
--having more or less channel does not do a favor. ending with channel size 16 for conv is really good
+-having more or less channel does not do a favor. ending with channel size 16 for conv is really good.however 8 is not much worse
 
 
 TODO:
