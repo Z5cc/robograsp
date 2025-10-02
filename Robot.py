@@ -21,7 +21,7 @@ class Joint():
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi, object):
+    def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
@@ -32,9 +32,9 @@ class Robot:
         self.tcp_up = tcp_up
         self.cone_tar = cone_tar
         self.cone_phi = cone_phi
-        self.object = object
 
-    def load(self):
+
+        # LOADING
         self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.arm_num_dofs = 6
@@ -80,13 +80,8 @@ class Robot:
             p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         
         self.id_tcp_link = self.link_map['tcp_link']
-        self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints, self.object)
+        self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
         
-
-    
-
-
-
 
     def move_tcp(self, delta):
         state_new = self.delta_to_absolute(delta)

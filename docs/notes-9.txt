@@ -10,5 +10,10 @@ notes for neural network hyperparameters:
 
 
 TODO:
--1. read about data ambigoution and what effects. then rotatate object random position etc.. open other DoF
+
+-1. read about data augmentation and what effects. then rotatate object random position etc.. open other DoF
+data augmentation.
+past main issueso the frist main issue: gripper hovered over objects because of non-potential rewards -> solution: potential reward
+now the issue is that gripper moves towards object, but doesnt stop: augmentation necessary
+
 -2. reward optimization

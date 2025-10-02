@@ -4,14 +4,13 @@ import math
 
 
 class Gripper():
-    def __init__(self, id, link_map, joint_map, joints, object, max_open=0.05):
+    def __init__(self, id, link_map, joint_map, joints, max_open=0.05):
         self.id = id
         self.link_map = link_map
         self.joint_map = joint_map
         self.joints = joints
         self.id_base_link = link_map['robotiq_arg2f_base_link']
         self.joints = joints
-        self.object = object
         self.gripper_range = [0, 0.085 if max_open>0.085 else max_open]
 
         # To control the gripper

@@ -1,10 +1,10 @@
-from Env import make_env
+from Env import Env
 
 
 
 def user_control_demo():
 
-    env = make_env()
+    env = Env()
     while True:
         debug_parameter = env.read_debug_parameter()
         delta, gr_delta = debug_parameter[0:6], debug_parameter[-1]

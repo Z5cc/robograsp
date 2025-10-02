@@ -12,7 +12,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from DQN import Transition, ReplayMemory, DQN
-from Env import make_env
+from Env import Env
 
 
 
@@ -63,7 +63,7 @@ TAU = 0.005
 LR = 3e-4
 
 
-env = make_env(GAMMA)
+env = Env()
 h, w = env.camera.height, env.camera.width
 n_actions = env.action_space_size
 policy_net = DQN(h, w, n_actions).to(device)
@@ -191,7 +191,7 @@ for i_episode in range(num_episodes):
     for t in count():
         # 1. RUN ENVIRONMENT
         action = select_action(state)
-        observation, reward, terminated, truncated, info = env.step(action.item())
+        observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 

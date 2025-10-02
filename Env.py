@@ -3,7 +3,8 @@ import pybullet as p
 import pybullet_data
 
 from Reward import Reward
-from Assets import Camera, Object
+from Camera import Camera
+from Object import Object
 from Robot import Robot
 from tqdm import tqdm
 
@@ -16,24 +17,17 @@ class Env:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object, camera, reward, vis=False) -> None:
+    def __init__(self, vis=True) -> None:
         self.vis = vis
         if self.vis:
             self.p_bar = tqdm(ncols=0, disable=False)
-        self.camera = camera
-        self.object = object
-        self.robot = robot
-        self.reward = reward
-
-        # load
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
-        self.planeID = p.loadURDF("plane.urdf")
-        self.object.load()
-        self.robot.load()
-        self.camera.load(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward.load(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
+
+        self.action_space_size = 7
+        self.steps = 0
+        self.max_steps = 100
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
         self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
@@ -44,9 +38,33 @@ class Env:
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
-        self.action_space_size = 7
-        self.steps = 0
-        self.max_steps = 100
+        
+        # LOADING
+        obj_pos = (0,0,0)
+
+        near = 0.001 # 0.1 means anything closer than 10 cm is invisible
+        far = 0.6 # anything further than this is also default fovdefault fov invisible
+        size = (16, 16)
+        fov = 50
+
+        rob_pos = (0, 0.5, 0)
+        rob_orn = (0, 0, 0)
+        ll_t = [-0.15,-0.15,0.03] # x,y,z
+        ul_t = [0.15,0.15,0.20]
+        tcp_center = np.array([0,0.05,0.20]) # center for starting position of tcp
+        tcp_tar = np.array([0,0,0]) # target position for tcp
+        tcp_up = np.array([0,-1,0])
+        cone_tar = np.array([0,0,0]) # target position for the restriction cone
+        cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
+
+        self.planeID = p.loadURDF("plane.urdf")
+        self.object = Object(obj_pos,ll_t,ul_t)
+        self.robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi)
+        self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'],  near, far, size, fov)
+        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
+
+        self.reset()
+
 
     def read_debug_parameter(self):
         # read the value of task parameter
@@ -67,7 +85,7 @@ class Env:
 
 
 
-    def step(self, action):
+    def step(self, action, gamma):
         gr_delta = 'open'
         dx,dy,dz = 0,0,0
         droll,dpitch,dyaw=0,0,0
@@ -89,7 +107,7 @@ class Env:
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         obs, graspable = self.step_move(delta,gr_delta)
-        reward = self.get_reward(gr_delta)
+        reward = self.get_reward(gr_delta,gamma)
         print(f'reward:{reward}\n')
 
         info = None
@@ -153,8 +171,8 @@ class Env:
             assert self.camera is None            
         return depth
 
-    def get_reward(self,gr_delta):
-        return self.reward.get_reward(gr_delta)
+    def get_reward(self,gr_delta,gamma):
+        return self.reward.get_reward(gr_delta,gamma)
 
 
 
@@ -172,44 +190,3 @@ class Env:
 
     def close(self):
         p.disconnect(self.physicsClient)
-
-
-
-
-
-
-
-
-
-    
-
-
-def make_env(GAMMA=None):
-    obj_pos = (0,0,0)
-
-    near = 0.001 # 0.1 means anything closer than 10 cm is invisible
-    far = 0.6 # anything further than this is also default fovdefault fov invisible
-    size = (16, 16)
-    fov = 50
-
-    rob_pos = (0, 0.5, 0)
-    rob_orn = (0, 0, 0)
-    ll_t = [-0.15,-0.15,0.03] # x,y,z
-    ul_t = [0.15,0.15,0.25]
-    tcp_center = np.array([0,0.05,0.25]) # center for starting position of tcp
-    tcp_tar = np.array(obj_pos) # target position for tcp
-    tcp_up = np.array([0,-1,0])
-    cone_tar = np.array(obj_pos) # target position for the restriction cone
-    cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
-
-
-
-    object = Object(obj_pos, ll_t, ul_t)
-    robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi,object)
-    camera = Camera(near, far, size, fov)
-    reward = Reward(GAMMA)
-
-
-    env = Env(robot, object, camera, reward, vis=False)
-    env.reset()
-    return env
