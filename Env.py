@@ -40,8 +40,6 @@ class Env:
 
         
         # LOADING
-        obj_pos = (0,0,0)
-
         near = 0.001 # 0.1 means anything closer than 10 cm is invisible
         far = 0.6 # anything further than this is also default fovdefault fov invisible
         size = (16, 16)
@@ -52,14 +50,13 @@ class Env:
         ll_t = [-0.15,-0.15,0.03] # x,y,z
         ul_t = [0.15,0.15,0.20]
         tcp_center = np.array([0,0.05,0.20]) # center for starting position of tcp
-        tcp_tar = np.array([0,0,0]) # target position for tcp
         tcp_up = np.array([0,-1,0])
         cone_tar = np.array([0,0,0]) # target position for the restriction cone
         cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
 
         self.planeID = p.loadURDF("plane.urdf")
-        self.object = Object(obj_pos,ll_t,ul_t)
-        self.robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi)
+        self.object = Object(ll_t,ul_t)
+        self.robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_up, cone_tar, cone_phi)
         self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'],  near, far, size, fov)
         self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
 
@@ -178,8 +175,8 @@ class Env:
 
 
     def reset(self):
-        self.robot.reset()
-        self.object.reset()
+        obj_pos = self.object.reset()
+        self.robot.reset(obj_pos)
         self.reward.reset()
         for _ in range(30):
             self.step_simulation()

@@ -16,4 +16,9 @@ data augmentation.
 past main issueso the frist main issue: gripper hovered over objects because of non-potential rewards -> solution: potential reward
 now the issue is that gripper moves towards object, but doesnt stop: augmentation necessary
 
+introduced starting augmentation. still need augment starting rotation of last robot axis.
+and still need to open other DOFs
+
 -2. reward optimization
+
+-3. try PPO

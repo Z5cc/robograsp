@@ -1,6 +1,7 @@
 import pybullet as p
 import numpy as np
 import quaternion
+import random
 from scipy.spatial.transform import Rotation as R
 
 from Gripper import Gripper
@@ -21,14 +22,13 @@ class Joint():
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_tar, tcp_up, cone_tar, cone_phi):
+    def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_up, cone_tar, cone_phi):
         self.base_pos = pos
         self.base_ori = p.getQuaternionFromEuler(ori)
         
         self.ll_t = ll_t
         self.ul_t = ul_t
         self.tcp_center = tcp_center
-        self.tcp_tar = tcp_tar
         self.tcp_up = tcp_up
         self.cone_tar = cone_tar
         self.cone_phi = cone_phi
@@ -81,7 +81,7 @@ class Robot:
         
         self.id_tcp_link = self.link_map['tcp_link']
         self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
-        
+
 
     def move_tcp(self, delta):
         state_new = self.delta_to_absolute(delta)
@@ -174,11 +174,15 @@ class Robot:
 
 
 
-    def reset(self):
+    def reset(self, obj_pos):
         """
         reset to rest poses
         """
-        tcp_vec = self.tcp_tar - self.tcp_center
+        dev = 0.04
+        tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
+        tcp_center = self.tcp_center+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
+
+        tcp_vec = tcp_tar - tcp_center
         tcp_vec = tcp_vec / np.linalg.norm(tcp_vec)
         z_new = self.tcp_up - np.dot(self.tcp_up,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
         z_new = z_new / np.linalg.norm(z_new)
