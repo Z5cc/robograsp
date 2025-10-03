@@ -25,7 +25,7 @@ class Env:
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
 
-        self.action_space_size = 7
+        self.action_space_size = 13
         self.steps = 0
         self.max_steps = 100
 
@@ -86,21 +86,35 @@ class Env:
         gr_delta = 'open'
         dx,dy,dz = 0,0,0
         droll,dpitch,dyaw=0,0,0
+        dt = 0.015
+        dr = 0.1
 
-        if action==0: # grasp
+        if action==0:
             gr_delta = 'close'
-        elif action==1: # approach
-            dx = 0.015
-        elif action==2: # regrasp
-            dx = -0.015
-        elif action==3: # adjust while moving little to object
-            dy = 0.015
+        elif action==1:
+            dx = +dt
+        elif action==2:
+            dx = -dt
+        elif action==3:
+            dy = +dt
         elif action==4:
-            dy = -0.015
+            dy = -dt
         elif action==5:
-            dz = +0.015
+            dz = +dt
         elif action==6:
-            dz = -0.015
+            dz = -dt
+        elif action==7:
+            droll = +dr
+        elif action==8:
+            droll = -dr
+        elif action==9:
+            dpitch = +dr
+        elif action==10:
+            dpitch = -dr
+        elif action==11:
+            dyaw = +dr
+        elif action==12:
+            dyaw = -dr
 
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         obs, graspable = self.step_move(delta,gr_delta)
