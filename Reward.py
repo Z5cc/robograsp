@@ -17,7 +17,7 @@ class Reward:
 
 
 
-    def get_reward(self, gr_delta,gamma):
+    def get_reward(self, gamma):
         next_potential = self.get_potential()
         r = gamma*next_potential-self.potential
         self.potential = next_potential

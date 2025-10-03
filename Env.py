@@ -83,15 +83,63 @@ class Env:
 
 
     def step(self, action, gamma):
-        gr_delta = 'open'
+        if action==0:
+            obs = self.grasp()
+        else:
+            obs = self.seek(action)
+
+        reward = self.get_reward(gamma)
+        print(f'reward:{reward}\n')
+
+        info = None
+        self.steps += 1
+        truncated = self.steps >= self.max_steps
+        terminated = (self.reward.successfull_grasp()==True)  or (self.object.is_in_boundaries()==False)
+
+        return obs, reward, terminated, truncated, info
+    
+
+    def grasp(self):
+        self.approach()
+        liftable_init = self.close()
+        if liftable_init:
+            self.lift()
+        else:
+            self.retreat()
+        return self.get_observation()
+    
+    def approach(self):
+
+
+    def close(self):
+        liftable_init=False
+        self.robot.close_gripper()
+        c=0
+        while not self.robot.gripper.gr_closed():
+            self.robot.gripper.save_angle()
+            for _ in range(60):
+                self.step_simulation()
+            c=c+1 if self.robot.gripper.has_object() else 0
+
+            if c==4:
+                liftable_init=True
+                break
+        return liftable_init
+
+    def lift(self):
+        
+
+    def retreat(self):
+        
+
+    def seek(self,action):
+        # default inits
         dx,dy,dz = 0,0,0
         droll,dpitch,dyaw=0,0,0
+        # default deltas
         dt = 0.015
         dr = 0.1
-
-        if action==0:
-            gr_delta = 'close'
-        elif action==1:
+        if action==1:
             dx = +dt
         elif action==2:
             dx = -dt
@@ -115,49 +163,14 @@ class Env:
             dyaw = +dr
         elif action==12:
             dyaw = -dr
-
         delta = [dx,dy,dz,droll,dpitch,dyaw]
-        obs, graspable = self.step_move(delta,gr_delta)
-        reward = self.get_reward(gr_delta,gamma)
-        print(f'reward:{reward}\n')
-
-        info = None
-        self.steps += 1
-        truncated = self.steps >= self.max_steps
-        terminated = (graspable==True)  or (self.object.is_in_boundaries()==False)
-
-        return obs, reward, terminated, truncated, info
-
-
-    def step_move(self, delta, gr_delta):
-        
-        # move gripper
-        graspable=False
-        if gr_delta=='close':
-            self.robot.close_gripper()
-            c=0
-            while not self.robot.gripper.gr_closed():
-                self.robot.gripper.save_angle()
-                for _ in range(60):
-                    self.step_simulation()
-                c=c+1 if self.robot.gripper.has_object() else 0
-
-                if c==4:
-                    graspable=True
-                    delta[0]=-0.5
-                    break
-
-        elif gr_delta=='open':
-            self.robot.open_gripper()
-        else:
-            self.robot.move_gripper(gr_delta)
-        
-        # move arm
+        # move arm and gripper
         self.robot.move_tcp(delta)
+        self.robot.open_gripper()
         for _ in range(30):
             self.step_simulation()
-        
-        return self.get_observation(), graspable
+        return self.get_observation()
+
 
 
     def step_simulation(self):
@@ -179,7 +192,7 @@ class Env:
         if isinstance(self.camera, Camera):
             rgb, depth, seg = self.camera.shot()
         else:
-            assert self.camera is None            
+            assert self.camera is None
         return depth
 
     def get_reward(self,gr_delta,gamma):
