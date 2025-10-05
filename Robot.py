@@ -82,11 +82,11 @@ class Robot:
         self.id_tcp_link = self.link_map['tcp_link']
         self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
 
-
-    def move_tcp(self, delta):
-        state_new = self.delta_to_absolute(delta)
-        pos = state_new[0:3]
-        orn = state_new[3:7]
+    def move_tcp(self, target, delta_mode=False):
+        if delta_mode:
+            target = self.delta_to_absolute(target)
+        pos = target[0:3]
+        orn = target[3:7]
         joint_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, pos, orn, jointDamping=self.joints_dampings)
         # arm
         for joint_pose, joint_id in zip(joint_poses, self.joints_controllable_arm_ids):

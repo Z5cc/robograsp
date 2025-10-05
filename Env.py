@@ -79,7 +79,12 @@ class Env:
 
 
 
-
+    def step_demo(self, delta, gr_delta):
+        self.robot.move_gripper(gr_delta)
+        self.robot.move_tcp(delta, delta_mode=True)
+        for _ in range(30):
+            self.step_simulation()
+        return self.get_observation()
 
 
     def step(self, action, gamma):
@@ -109,6 +114,11 @@ class Env:
         return self.get_observation()
     
     def approach(self):
+        delta = [0.005,0,0,0,0,0,0]
+        while not self.camera.approach_stop():
+            self.robot.move_tcp(delta,delta_mode=True)
+            for _ in range(30):
+                self.step_simulation()
 
 
     def close(self):
@@ -127,10 +137,23 @@ class Env:
         return liftable_init
 
     def lift(self):
-        
+        pos, orn, *_ = p.getLinkState(self.id, self.id_tcp_link)
+        while pos[0]<0.1:
+            pos[0]+=0.01
+            self.robot.move_tcp(pos+orn)
+            for _ in range(30):
+                self.step_simulation()
+            if not self.robot.gripper.has_object():
+                self.retreat()
+                break
 
     def retreat(self):
-        
+        delta = [-0.01,0,0,0,0,0,0]
+        for _ in range(5):
+            self.robot.move_tcp(delta,delta_mode=True)
+            for _ in range(30):
+                self.step_simulation()
+
 
     def seek(self,action):
         # default inits
@@ -165,7 +188,7 @@ class Env:
             dyaw = -dr
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         # move arm and gripper
-        self.robot.move_tcp(delta)
+        self.robot.move_tcp(delta, delta_mode=True)
         self.robot.open_gripper()
         for _ in range(30):
             self.step_simulation()
