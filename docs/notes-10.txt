@@ -1,0 +1,2 @@
+- continue with difficulties with has_object
+- therefore introduce a single test: place object and tcp so that if a grasp is triggered it should be successfull   with pytest

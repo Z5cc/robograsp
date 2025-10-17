@@ -7,7 +7,7 @@ class Camera:
     near = 0.01 # 0.1 means anything closer than 10 cm is invisible
     far = 0.6 # anything further than this is also default fovdefault fov invisible
     """
-    def __init__(self, id_robot, id_lens_link, near=0.001, far=0.6, size=(16,16), fov=50):
+    def __init__(self, id_robot, id_lens_link, near, far, size, fov):
         self.id_robot = id_robot
         self.id_lens_link = id_lens_link
         self.width, self.height = size
@@ -31,7 +31,23 @@ class Camera:
 
 
         # Get depth values using the OpenGL renderer
-        _w, _h, rgb, depth, seg = p.getCameraImage(self.width, self.height,
+        _w, _h, rgb, depthImg, seg = p.getCameraImage(self.width, self.height,
                                                    self.view_matrix, self.projection_matrix,
                                                    )
+        depth = self.far*self.near/(self.far-(self.far-self.near)*depthImg)
         return rgb, depth, seg
+
+    def approach_stop(self):
+        _, depth, _ = self.shot()
+        row_9, row_10, row_11 = depth[9], depth[10], depth[11]
+        row_9, row_10, row_11 = row_9[5:12], row_10[5:12], row_11[5:12]
+        for c in row_9:
+            if c<0.0931:
+                return True
+        for c in row_10:
+            if c<0.0945:
+                return True
+        for c in row_11:
+            if c<0.0960:
+                return True
+        return False

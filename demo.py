@@ -11,6 +11,11 @@ def user_control_demo():
 
         obs = env.step_demo(delta,gr_delta)
 
+        # print('\n\n\n','obsbeginn',obs,'obsend')
+        # print('\n\n\n','shoulder_torque: ',env.robot.get_shoulder_torque())
+        print('\n\n\n','gripper_torque: ',env.robot.gripper.get_torque())
+
+
 
 
 

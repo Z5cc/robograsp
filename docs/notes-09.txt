@@ -22,3 +22,34 @@ and still need to open other DOFs
 -2. reward optimization
 
 -3. try PPO
+
+how to continue after the djungle trek:
+1. understand which camera depth buffer to use
+2. implement approach() function. first implement the function in the camera class, which detects the barriers. for that in the urdf file adjust the tcp geometry to see were the barrier is. z buffer, computer graphics, last thing I looked up
+
+
+
+that was the TCP for testing for camera.approach_stop()
+
+  <joint name="ee_tcp_joint" type="fixed">
+    <parent link="ee_link"/>
+    <child link="tcp_link"/>
+    <origin rpy="0 0 0" xyz="0.14 0 0"/>
+  </joint>
+
+  <link name="tcp_link">
+    <visual>
+      <geometry>
+        <box size="0.005 0.04 0.013"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+  </link>
+
+
+
+
+
+
+
+maybe approach_stop via position

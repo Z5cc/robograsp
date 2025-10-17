@@ -30,9 +30,9 @@ class Env:
         self.max_steps = 100
 
         # custom sliders to tune parameters (name of the parameter,range,initial value)
-        self.dxin = p.addUserDebugParameter("dx", -0.1, 0.1, 0)
-        self.dyin = p.addUserDebugParameter("dy", -0.1, 0.1, 0)
-        self.dzin = p.addUserDebugParameter("dz", -0.1, 0.1, 0)
+        self.dxin = p.addUserDebugParameter("dx", -0.001, 0.001, 0)
+        self.dyin = p.addUserDebugParameter("dy", -0.001, 0.001, 0)
+        self.dzin = p.addUserDebugParameter("dz", -0.001, 0.001, 0)
         self.drollId = p.addUserDebugParameter("droll", -0.5, 0.5, 0)
         self.dpitchId = p.addUserDebugParameter("dpitch", -0.5, 0.5, 0)
         self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
@@ -40,8 +40,8 @@ class Env:
 
         
         # LOADING
-        near = 0.001 # 0.1 means anything closer than 10 cm is invisible
-        far = 0.6 # anything further than this is also default fovdefault fov invisible
+        near = 0.01
+        far = 5
         size = (16, 16)
         fov = 50
 
@@ -114,11 +114,16 @@ class Env:
         return self.get_observation()
     
     def approach(self):
-        delta = [0.005,0,0,0,0,0,0]
-        while not self.camera.approach_stop():
+        dx = 0.005
+        delta = [dx,0,0,0,0,0,0]
+        x_approach_stop = False
+        while not (x_approach_stop):
+            x_old = self.robot.get_t_in_tcp_system()[0]
             self.robot.move_tcp(delta,delta_mode=True)
             for _ in range(30):
                 self.step_simulation()
+            x = self.robot.get_t_in_tcp_system()[0]
+            x_approach_stop = x_old+0.9*dx > x # if x does not reach the goal of x_old+0.9*dx
 
 
     def close(self):
@@ -129,7 +134,7 @@ class Env:
             self.robot.gripper.save_angle()
             for _ in range(60):
                 self.step_simulation()
-            c=c+1 if self.robot.gripper.has_object() else 0
+            c=c+1 if self.robot.gripper.has_object(include_delta=True) else 0
 
             if c==4:
                 liftable_init=True
@@ -137,13 +142,14 @@ class Env:
         return liftable_init
 
     def lift(self):
-        pos, orn, *_ = p.getLinkState(self.id, self.id_tcp_link)
+        pos, orn, *_ = p.getLinkState(self.robot.id, self.robot.id_tcp_link)
+        pos, orn = list(pos), list(orn)
         while pos[0]<0.1:
             pos[0]+=0.01
             self.robot.move_tcp(pos+orn)
             for _ in range(30):
                 self.step_simulation()
-            if not self.robot.gripper.has_object():
+            if not self.robot.gripper.has_object(include_delta=False):
                 self.retreat()
                 break
 
@@ -218,8 +224,8 @@ class Env:
             assert self.camera is None
         return depth
 
-    def get_reward(self,gr_delta,gamma):
-        return self.reward.get_reward(gr_delta,gamma)
+    def get_reward(self,gamma):
+        return self.reward.get_reward(gamma)
 
 
 
@@ -234,6 +240,3 @@ class Env:
         self.steps = 0
         info = None
         return self.get_observation(), info
-
-    def close(self):
-        p.disconnect(self.physicsClient)

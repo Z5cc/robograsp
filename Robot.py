@@ -103,8 +103,8 @@ class Robot:
         r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
         
         # 2. translation
-        R_W_TCP = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        dt = R_W_TCP @ dt_TCP
+        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        dt = R_TCP_W @ dt_TCP # from local to global world frame
         t += dt
 
         # 3. rotation
@@ -119,6 +119,19 @@ class Robot:
 
         r = [r.x,r.y,r.z,r.w]
         return t + r
+    
+    def get_t_in_tcp_system(self):
+        """
+        return t, but in the tcp coordinate system with the axis according to current tcp orientation
+        """
+        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
+        t = np.array(state_TCP[0])  # translation
+        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
+
+        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        R_W_TCP = np.transpose(R_TCP_W)
+        t = R_W_TCP @ t
+        return t
 
     def clamp_t(self,t,ll_t,ul_t):
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
