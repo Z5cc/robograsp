@@ -17,14 +17,14 @@ class Env:
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, vis=True) -> None:
+    def __init__(self, robot, object, vis=True) -> None:
         self.vis = vis
         if self.vis:
             self.p_bar = tqdm(ncols=0, disable=False)
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
-
+        
         self.action_space_size = 13
         self.steps = 0
         self.max_steps = 100
@@ -39,25 +39,13 @@ class Env:
         self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
         
-        # LOADING
-        near = 0.01
-        far = 5
-        size = (16, 16)
-        fov = 50
-
-        rob_pos = (0, 0.5, 0)
-        rob_orn = (0, 0, 0)
-        ll_t = [-0.15,-0.15,0.03] # x,y,z
-        ul_t = [0.15,0.15,0.20]
-        tcp_center = np.array([0,0.05,0.20]) # center for starting position of tcp
-        tcp_up = np.array([0,-1,0])
-        cone_tar = np.array([0,0,0]) # target position for the restriction cone
-        cone_phi = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
-
+        # LOADING ENTITIES INTO THE ENVIRONMENT
         self.planeID = p.loadURDF("plane.urdf")
-        self.object = Object(ll_t,ul_t)
-        self.robot = Robot(rob_pos, rob_orn, ll_t, ul_t, tcp_center, tcp_up, cone_tar, cone_phi)
-        self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'],  near, far, size, fov)
+        self.robot = robot
+        self.robot.load()
+        self.object = object
+        self.object.load()
+        self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
         self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
 
         self.reset()
@@ -99,7 +87,7 @@ class Env:
         info = None
         self.steps += 1
         truncated = self.steps >= self.max_steps
-        terminated = (self.reward.successfull_grasp()==True)  or (self.object.is_in_boundaries()==False)
+        terminated = (self.reward.successfull_grasp()==True)  or (self.robot.object_is_in_boundaries(self.object.id)==False)
 
         return obs, reward, terminated, truncated, info
     

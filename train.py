@@ -6,19 +6,26 @@ import matplotlib.pyplot as plt
 from collections import deque
 from itertools import count
 
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
 from DQN import Transition, ReplayMemory, DQN
+
+from Robot import Robot
+from Object import Object
 from Env import Env
 
 
-
-
-
-
+BATCH_SIZE = 128 # BATCH_SIZE is the number of transitions sampled from the replay buffer
+GAMMA = 0.99 # GAMMA is the discount factor as mentioned in the previous section
+EPS_START = 0.9 # EPS_START is the starting value of epsilon
+EPS_END = 0.01 # EPS_END is the final value of epsilon
+EPS_DECAY = 2500 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+TAU = 0.005 # TAU is the update rate of the target network
+LR = 3e-4 # LR is the learning rate of the ``AdamW`` optimizer
 
 
 
@@ -40,31 +47,10 @@ device = torch.device(
 
 
 
-
-
-
-
-
-
-# BATCH_SIZE is the number of transitions sampled from the replay buffer
-# GAMMA is the discount factor as mentioned in the previous section
-# EPS_START is the starting value of epsilon
-# EPS_END is the final value of epsilon
-# EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
-# TAU is the update rate of the target network
-# LR is the learning rate of the ``AdamW`` optimizer
-
-BATCH_SIZE = 128
-GAMMA = 0.99
-EPS_START = 0.9
-EPS_END = 0.01
-EPS_DECAY = 2500
-TAU = 0.005
-LR = 3e-4
-
-
-env = Env()
-h, w = env.camera.height, env.camera.width
+robot = Robot()
+object = Object()
+env = Env(robot,object)
+h, w = env.camera.HEIGTH, env.camera.WIDTH
 n_actions = env.action_space_size
 policy_net = DQN(h, w, n_actions).to(device)
 target_net = DQN(h, w ,n_actions).to(device)

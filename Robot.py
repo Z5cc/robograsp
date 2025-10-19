@@ -8,34 +8,35 @@ from Gripper import Gripper
 
 
 
-
 class Joint():
-    def __init__(self, index, joint_type, max_force, max_vel, controllable, numeric_damping=0.00001):
+    def __init__(self, index, joint_type, max_force, max_vel, controllable):
         self.index = index
         self.joint_type = joint_type
         self.max_force = max_force
         self.max_vel = max_vel
         self.controllable = controllable
-        self.numeric_damping = numeric_damping
+        self.NUMERIC_DAMPING = 0.00001
 
 
 
 class Robot:
 
-    def __init__(self, pos, ori, ll_t, ul_t, tcp_center, tcp_up, cone_tar, cone_phi):
-        self.base_pos = pos
-        self.base_ori = p.getQuaternionFromEuler(ori)
-        
-        self.ll_t = ll_t
-        self.ul_t = ul_t
-        self.tcp_center = tcp_center
-        self.tcp_up = tcp_up
-        self.cone_tar = cone_tar
-        self.cone_phi = cone_phi
+    def __init__(self, TCP_TARGET=None):
+        self.random = TCP_TARGET is None
+        self.BASE_POS = (0,0.5,0)
+        self.BASE_ORN = p.getQuaternionFromEuler((0,0,0))
+        self.LL_T = [-0.15,-0.15,0.03] # x,y,z
+        self.UL_T = [0.15,0.15,0.20]
+        self.TCP_CENTER = np.array([0,0.05,0.20]) # center for starting position of tcp
+        self.TCP_TARGET = TCP_TARGET
+        self.TCP_UP = np.array([0,-1,0])
+        self.CONE_TAR = np.array([0,0,0]) # target position for the restriction cone
+        self.CONE_PHI = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
 
 
+    def load(self):
         # LOADING
-        self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.base_pos, self.base_ori,
+        self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.BASE_POS, self.BASE_ORN,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.arm_num_dofs = 6
         self.arm_rest_poses = [-1.8427108144422384,-1.783986598255091,1.9232743283452045,-1.9004039537122694,-1.5180998101236258,-0.2668835598602039]
@@ -65,7 +66,7 @@ class Robot:
             max_vel = info[11]
             controllable = (joint_type != p.JOINT_FIXED)
             joint = Joint(index,joint_type,max_force,max_vel,controllable)
-            self.joints_dampings.append(joint.numeric_damping)
+            self.joints_dampings.append(joint.NUMERIC_DAMPING)
 
             self.link_map[link_name] = index
             self.joint_map[joint_name] = index
@@ -114,8 +115,8 @@ class Robot:
         
         t = t.tolist()
 
-        t = self.clamp_t(t,self.ll_t,self.ul_t)
-        r = self.clamp_r(r,self.tcp_center,self.cone_tar,self.cone_phi)
+        t = self.clamp_t(t,self.LL_T,self.UL_T)
+        r = self.clamp_r(r,self.TCP_CENTER,self.CONE_TAR,self.CONE_PHI)
 
         r = [r.x,r.y,r.z,r.w]
         return t + r
@@ -137,9 +138,9 @@ class Robot:
         t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
         return t
 
-    def clamp_r(self,r,tcp_center,cone_tar,cone_phi):
-        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding cone_phi
-        cone_vec = cone_tar - tcp_center
+    def clamp_r(self,r,tcp_center,CONE_TAR,CONE_PHI):
+        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding CONE_PHI
+        cone_vec = CONE_TAR - tcp_center
         cone_vec = cone_vec / np.linalg.norm(cone_vec)
         # calculate alpha
         x_e = np.array([1,0,0])
@@ -149,12 +150,12 @@ class Robot:
         x_t = x_t / np.linalg.norm(x_t)
         alpha = np.arccos(np.dot(cone_vec, x_t))
 
-        if alpha>cone_phi:
+        if alpha>CONE_PHI:
             # calculate n
             n = np.cross(x_t,cone_vec)
             n = n/np.linalg.norm(n)
             n_x, n_y, n_z = n[0], n[1], n[2]
-            alpha_b = alpha - cone_phi
+            alpha_b = alpha - CONE_PHI
             sin_half = np.sin(alpha_b/2)
             cos_half = np.cos(alpha_b/2)
             r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
@@ -187,17 +188,20 @@ class Robot:
 
 
 
-    def reset(self, obj_pos):
+    def reset(self, obj_pos=None):
         """
         reset to rest poses
         """
         dev = 0.04
-        tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
-        tcp_center = self.tcp_center+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
-
+        if self.random:
+            tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
+            tcp_center = self.TCP_CENTER+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
+        else:
+            tcp_tar = self.TCP_TARGET
+            tcp_center = self.TCP_CENTER
         tcp_vec = tcp_tar - tcp_center
         tcp_vec = tcp_vec / np.linalg.norm(tcp_vec)
-        z_new = self.tcp_up - np.dot(self.tcp_up,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
+        z_new = self.TCP_UP - np.dot(self.TCP_UP,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
         z_new = z_new / np.linalg.norm(z_new)
         y_new = np.cross(z_new,tcp_vec)
         y_new = y_new / np.linalg.norm(y_new)
@@ -216,7 +220,7 @@ class Robot:
             p.resetJointState(self.id, joint_id, rest_pose)
 
         # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, self.tcp_center, orn, jointDamping=self.joints_dampings)
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, self.TCP_CENTER, orn, jointDamping=self.joints_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
 
@@ -240,3 +244,9 @@ class Robot:
             velocities.append(vel)
         tcp_pos = p.getLinkState(self.id, self.id_tcp_link)[0]
         return dict(positions=positions, velocities=velocities, tcp_pos=tcp_pos)
+    
+
+
+    def object_is_in_boundaries(self, id_object):
+        x, y, _ = p.getBasePositionAndOrientation(id_object)[0]
+        return self.LL_T[0] < x < self.UL_T[0] and self.LL_T[1] < y < self.UL_T[1]
