@@ -1,6 +1,7 @@
 import numpy as np
 import pybullet as p
 import pybullet_data
+import time
 
 from Reward import Reward
 from Camera import Camera
@@ -94,11 +95,8 @@ class Env:
 
     def grasp(self):
         self.approach()
-        liftable_init = self.close()
-        if liftable_init:
-            self.lift()
-        else:
-            self.retreat()
+        liftable = self.close()
+        self.lift() if liftable else self.retreat()
         return self.get_observation()
     
     def approach(self):
@@ -115,7 +113,7 @@ class Env:
 
 
     def close(self):
-        liftable_init=False
+        liftable=False
         self.robot.close_gripper()
         c=0
         while not self.robot.gripper.gr_closed():
@@ -125,15 +123,15 @@ class Env:
             c=c+1 if self.robot.gripper.has_object(include_delta=True) else 0
 
             if c==4:
-                liftable_init=True
+                liftable=True
                 break
-        return liftable_init
+        return liftable
 
     def lift(self):
         pos, orn, *_ = p.getLinkState(self.robot.id, self.robot.id_tcp_link)
         pos, orn = list(pos), list(orn)
-        while pos[0]<0.1:
-            pos[0]+=0.01
+        while pos[2]<0.2: # lift in z direction
+            pos[2]+=0.01
             self.robot.move_tcp(pos+orn)
             for _ in range(30):
                 self.step_simulation()
@@ -228,3 +226,7 @@ class Env:
         self.steps = 0
         info = None
         return self.get_observation(), info
+
+
+    def disconnect(self):
+            p.disconnect(self.physicsClient)

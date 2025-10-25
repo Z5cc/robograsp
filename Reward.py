@@ -39,7 +39,7 @@ class Reward:
     def successfull_grasp(self):
         lo, hi = p.getAABB(self.id_object)
         lowest_point_z = lo[2]
-        return lowest_point_z>0.05
+        return lowest_point_z>0.005
 
 
 
