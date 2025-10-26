@@ -28,7 +28,8 @@ class Reward:
         if self.successfull_grasp():
             return 100
         else:
-            return -2000*self.distance_tcp_object()
+            # penalty for frequent grasping or penalty for failed grasping
+            return 0
 
 
     def distance_tcp_object(self):
@@ -166,7 +167,3 @@ class Reward:
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
         return offset
     
-
-
-    
-

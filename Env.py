@@ -77,6 +77,7 @@ class Env:
 
 
     def step(self, action, gamma):
+        print('\n\n\naction: ', action)
         if action==0:
             obs = self.grasp()
         else:
@@ -140,6 +141,7 @@ class Env:
                 break
 
     def retreat(self):
+        self.robot.open_gripper()
         delta = [-0.01,0,0,0,0,0,0]
         for _ in range(5):
             self.robot.move_tcp(delta,delta_mode=True)
