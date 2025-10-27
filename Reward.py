@@ -29,13 +29,13 @@ class Reward:
             return 100
         else:
             # penalty for frequent grasping or penalty for failed grasping
-            return 0
+            r = 1000*self.ray_offset()
+            return r
 
 
-    def distance_tcp_object(self):
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
-        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
-        return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))
+
+
+
     
     def successfull_grasp(self):
         lo, hi = p.getAABB(self.id_object)
@@ -158,12 +158,21 @@ class Reward:
         obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
 
         # get straight
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
+        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
         rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
-        gr_forw = rot_matrix[:, 2]
+        gr_forw = rot_matrix[:,0]
 
         obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
         cross = np.cross(gr_forw, obj_pos-gr_pos)
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
         return offset
     
+
+
+
+
+
+    # def distance_tcp_object(self):
+    #     gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
+    #     obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+    #     return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))

@@ -7,7 +7,6 @@ from Reward import Reward
 from Camera import Camera
 from Object import Object
 from Robot import Robot
-from tqdm import tqdm
 
 
 class FailToReachTargetError(RuntimeError):
@@ -20,8 +19,6 @@ class Env:
 
     def __init__(self, robot, object, vis=True) -> None:
         self.vis = vis
-        if self.vis:
-            self.p_bar = tqdm(ncols=0, disable=False)
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
@@ -77,14 +74,14 @@ class Env:
 
 
     def step(self, action, gamma):
-        print('\n\n\naction: ', action)
+        print(f'action:{action}')
         if action==0:
             obs = self.grasp()
         else:
             obs = self.seek(action)
 
         reward = self.get_reward(gamma)
-        print(f'reward:{reward}\n')
+        print(f'reward:{reward}')
 
         info = None
         self.steps += 1
@@ -193,9 +190,8 @@ class Env:
     def step_simulation(self):
         p.stepSimulation()
         if self.vis:
-            # time.sleep(self.SIMULATION_STEP_DELAY)
-            self.p_bar.update(1)
-    
+            pass
+            # time.sleep(self.SIMULATION_STEP_DELAY)    
 
 
 

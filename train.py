@@ -74,7 +74,7 @@ def select_action(state):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            print('not random')
+            print('not_random')
             return policy_net(state).max(1).indices.view(1, 1)
     else:
         print('random')
@@ -175,6 +175,7 @@ for i_episode in range(num_episodes):
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
     for t in count():
+        print('\n\n\n')
         # 1. RUN ENVIRONMENT
         action = select_action(state)
         observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)

@@ -1,4 +1,5 @@
 import pybullet as p
+import time
 
 from Robot import Robot
 from Object import Object
@@ -15,17 +16,13 @@ def user_control_demo():
 
         obs = env.step_demo(delta,gr_delta)
 
-        lo, hi = p.getAABB(object.id)
-        print('\n\n\nlo: ',lo)
-        print('\n\n\nhi: ',hi)
-        # print('\n\n\n','obsbeginn',obs,'obsend')
-        # print('\n\n\n','shoulder_torque: ',env.robot.get_shoulder_torque())
-        print('\n\n\n','gripper_torque: ',env.robot.gripper.get_torque())
-
-
-
-
-
+        # lo, hi = p.getAABB(object.id)
+        # print(f'lo:{lo}')
+        # print(f'hi:{hi}')
+        # print(f'obs:{obs}')
+        # print(f'shoulder_torque:{env.robot.get_shoulder_torque()}')
+        # print(f'gripper_torque:{env.robot.gripper.get_torque()}')
+        print(f'ray_offest:{env.reward.ray_offset()}')
 
 
 
