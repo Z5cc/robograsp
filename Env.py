@@ -23,7 +23,7 @@ class Env:
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         
-        self.action_space_size = 13
+        self.action_space_size = 7
         self.steps = 0
         self.max_steps = 100
 
@@ -92,8 +92,11 @@ class Env:
     
 
     def grasp(self):
+        print('approach')
         self.approach()
+        print('close')
         liftable = self.close()
+        print('lift')
         self.lift() if liftable else self.retreat()
         return self.get_observation()
     
@@ -113,13 +116,14 @@ class Env:
     def close(self):
         liftable=False
         self.robot.close_gripper()
-        c=0
-        while not self.robot.gripper.gr_closed():
+        c,i=0,0
+        while (not self.robot.gripper.gr_closed()) and (i<100):
             self.robot.gripper.save_angle()
             for _ in range(60):
                 self.step_simulation()
             c=c+1 if self.robot.gripper.has_object(include_delta=True) else 0
-
+            i=i+1
+            print(i)
             if c==4:
                 liftable=True
                 break
@@ -152,7 +156,7 @@ class Env:
         droll,dpitch,dyaw=0,0,0
         # default deltas
         dt = 0.015
-        dr = 0.1
+        dr = 0.05
         if action==1:
             dx = +dt
         elif action==2:
@@ -165,18 +169,18 @@ class Env:
             dz = +dt
         elif action==6:
             dz = -dt
-        elif action==7:
-            droll = +dr
-        elif action==8:
-            droll = -dr
-        elif action==9:
-            dpitch = +dr
-        elif action==10:
-            dpitch = -dr
-        elif action==11:
-            dyaw = +dr
-        elif action==12:
-            dyaw = -dr
+        # elif action==7:
+        #     droll = +dr
+        # elif action==8:
+        #     droll = -dr
+        # elif action==9:
+        #     dpitch = +dr
+        # elif action==10:
+        #     dpitch = -dr
+        # elif action==11:
+        #     dyaw = +dr
+        # elif action==12:
+        #     dyaw = -dr
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         # move arm and gripper
         self.robot.move_tcp(delta, delta_mode=True)

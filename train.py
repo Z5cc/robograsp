@@ -23,9 +23,9 @@ BATCH_SIZE = 128 # BATCH_SIZE is the number of transitions sampled from the repl
 GAMMA = 0.99 # GAMMA is the discount factor as mentioned in the previous section
 EPS_START = 0.9 # EPS_START is the starting value of epsilon
 EPS_END = 0.01 # EPS_END is the final value of epsilon
-EPS_DECAY = 2500 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+EPS_DECAY = 5000 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
 TAU = 0.005 # TAU is the update rate of the target network
-LR = 3e-4 # LR is the learning rate of the ``AdamW`` optimizer
+LR = 0.0003 # LR is the learning rate of the ``AdamW`` optimizer
 
 
 
@@ -68,6 +68,7 @@ def select_action(state):
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * \
         math.exp(-1. * steps_done / EPS_DECAY)
+    print(f'eps_threshold:{eps_threshold}')
     steps_done += 1
     if sample > eps_threshold:
         with torch.no_grad():
@@ -96,9 +97,9 @@ def plot_durations(show_result=False):
     plt.ylabel('Duration')
     plt.plot(durations_t.numpy())
     # Take 100 episode averages and plot them too
-    if len(durations_t) >= 100:
-        means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-        means = torch.cat((torch.zeros(99), means))
+    if len(durations_t) >= 50:
+        means = durations_t.unfold(0, 50, 1).mean(1).view(-1)
+        means = torch.cat((torch.zeros(49), means))
         plt.plot(means.numpy())
 
     plt.pause(0.001)  # pause a bit so that plots are updated
@@ -108,14 +109,6 @@ def plot_durations(show_result=False):
             display.clear_output(wait=True)
         else:
             display.display(plt.gcf())
-
-
-
-
-
-
-
-
 
 
 def optimize_model():
@@ -166,16 +159,16 @@ def optimize_model():
 
 
 if torch.cuda.is_available() or torch.backends.mps.is_available():
-    num_episodes = 500
+    num_episodes = 10000
 else:
-    num_episodes = 500
+    num_episodes = 10000
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get its state
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
     for t in count():
-        print('\n\n\n')
+        print(f'\n\n\nt:{t}\n')
         # 1. RUN ENVIRONMENT
         action = select_action(state)
         observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
@@ -211,7 +204,6 @@ for i_episode in range(num_episodes):
             plot_durations()
             break
 
-print('Complete')
 plot_durations(show_result=True)
 plt.ioff()
 plt.show()

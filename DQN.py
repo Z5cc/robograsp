@@ -51,5 +51,5 @@ class DQN(nn.Module):
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = x.view(x.size(0),-1)
-        x = F.relu(self.lin1(x))
+        x = self.lin1(x)
         return x
