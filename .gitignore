@@ -2,3 +2,4 @@
 __pycache__/
 dqn_ppo/
 cartpole/
+results/

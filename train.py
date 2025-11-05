@@ -44,9 +44,6 @@ device = torch.device(
 )
 
 
-
-
-
 robot = Robot()
 object = Object()
 env = Env(robot,object)
@@ -61,28 +58,13 @@ memory = ReplayMemory(10000)
 
 
 steps_done = 0
-
-
-def select_action(state):
-    global steps_done
-    sample = random.random()
-    eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-        math.exp(-1. * steps_done / EPS_DECAY)
-    print(f'eps_threshold:{eps_threshold}')
-    steps_done += 1
-    if sample > eps_threshold:
-        with torch.no_grad():
-            # t.max(1) will return the largest column value of each row.
-            # second column on max result is index of where max element was
-            # found, so we pick action with the larger expected reward.
-            print('not_random')
-            return policy_net(state).max(1).indices.view(1, 1)
-    else:
-        print('random')
-        return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
-
-
 episode_durations = []
+
+
+
+
+
+
 
 
 def plot_durations(show_result=False):
@@ -111,6 +93,25 @@ def plot_durations(show_result=False):
             display.display(plt.gcf())
 
 
+def select_action(state):
+    global steps_done
+    sample = random.random()
+    eps_threshold = EPS_END + (EPS_START - EPS_END) * \
+        math.exp(-1. * steps_done / EPS_DECAY)
+    print(f'eps_threshold:{eps_threshold}')
+    steps_done += 1
+    if sample > eps_threshold:
+        with torch.no_grad():
+            # t.max(1) will return the largest column value of each row.
+            # second column on max result is index of where max element was
+            # found, so we pick action with the larger expected reward.
+            print('not_random')
+            return policy_net(state).max(1).indices.view(1, 1)
+    else:
+        print('random')
+        return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
+
+
 def optimize_model():
     if len(memory) < BATCH_SIZE:
         return
@@ -124,7 +125,6 @@ def optimize_model():
     state_batch = torch.cat(batch.state)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
-
 
 
     # Compute Q(s_t, a)
@@ -166,7 +166,9 @@ else:
 for i_episode in range(num_episodes):
     # Initialize the environment and get its state
     state, info = env.reset()
-    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+    state = torch.cat((state,state,state,state))
+    state = state.unsqueeze(0)
     for t in count():
         print(f'\n\n\nt:{t}\n')
         # 1. RUN ENVIRONMENT
@@ -178,8 +180,13 @@ for i_episode in range(num_episodes):
         if terminated:
             next_state = None
         else:
-            # already a batch of size 1, because select_action requires also batch format for call of policy_net even it is batch size 1
-            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+            # take state. state will have N=1. remove first element in C dimension.
+            next_state = state[:,1:]
+            # then append observation in C dimension
+            observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+            next_state = torch.cat((next_state,observation),dim=1)
+            # unsqueeze C. unsqueeze N.
+            # next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
 
         # Store the transition in memory
         memory.push(state, action, next_state, reward)
