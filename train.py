@@ -20,6 +20,10 @@ from Object import Object
 from Env import Env
 
 
+
+
+
+
 BATCH_SIZE = 128 # BATCH_SIZE is the number of transitions sampled from the replay buffer
 GAMMA = 0.99 # GAMMA is the discount factor as mentioned in the previous section
 EPS_START = 0.9 # EPS_START is the starting value of epsilon
@@ -30,20 +34,14 @@ LR = 0.0003 # LR is the learning rate of the ``AdamW`` optimizer
 
 
 
-# set up matplotlib
-is_ipython = 'inline' in matplotlib.get_backend()
-if is_ipython:
-    from IPython import display
 
-plt.ion()
+
+
 
 # if GPU is to be used
-device = torch.device(
-    "cuda" if torch.cuda.is_available() else
-    "mps" if torch.backends.mps.is_available() else
-    "cpu"
-)
-
+device = torch.device("cpu")
+steps_done = 0
+episode_durations = []
 
 robot = Robot()
 object = Object()
@@ -58,8 +56,6 @@ optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 memory = ReplayMemory(10000)
 
 
-steps_done = 0
-episode_durations = []
 
 
 
@@ -68,48 +64,33 @@ episode_durations = []
 
 
 
-def plot_durations(show_result=False):
+
+def plot_durations():
     plt.figure(1)
     durations_t = torch.tensor(episode_durations, dtype=torch.float)
-    if show_result:
-        plt.title('Result')
-    else:
-        plt.clf()
-        plt.title('Training...')
+    plt.clf()
     plt.xlabel('Episode')
     plt.ylabel('Duration')
     plt.plot(durations_t.numpy())
-    # Take 100 episode averages and plot them too
+    # plot 50 episode average
     if len(durations_t) >= 50:
         means = durations_t.unfold(0, 50, 1).mean(1).view(-1)
         means = torch.cat((torch.zeros(49), means))
         plt.plot(means.numpy())
-
     plt.pause(0.001)  # pause a bit so that plots are updated
-    if is_ipython:
-        if not show_result:
-            display.display(plt.gcf())
-            display.clear_output(wait=True)
-        else:
-            display.display(plt.gcf())
+
 
 
 def select_action(state):
     global steps_done
     sample = random.random()
-    eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-        math.exp(-1. * steps_done / EPS_DECAY)
+    eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
     # print(f'eps_threshold:{eps_threshold}')
     steps_done += 1
     if sample > eps_threshold:
         with torch.no_grad():
-            # t.max(1) will return the largest column value of each row.
-            # second column on max result is index of where max element was
-            # found, so we pick action with the larger expected reward.
-            print('not_random')
             return policy_net(state).max(1).indices.view(1, 1)
     else:
-        print('random')
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
 
 
@@ -164,23 +145,20 @@ if torch.cuda.is_available() or torch.backends.mps.is_available():
 else:
     num_episodes = 10000
 
+start_tt = time.time()
 for i_episode in range(num_episodes):
-    # Initialize the environment and get its state
     state, info = env.reset()
-    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-    state = torch.cat((state,state,state,state))
-    state = state.unsqueeze(0)
+    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0) # [1,1,H,W]
+    state = state.repeat(1, 4, 1, 1)  # [1,C,H,W]
     for t in count():
         print(f'\n\n\nt:{t}\n')
         start_t = time.time()
         # 1. RUN ENVIRONMENT
-        start = time.time()
         action = select_action(state)
-        print(f'select action time: {(time.time() - start):.6f}seconds')
 
         start = time.time()
         observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
-        print(f'simulation step time: {(time.time() - start):.6f}seconds')
+        print(f'simulation step time: {(time.time()-start):.6f}seconds')
 
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
@@ -188,18 +166,11 @@ for i_episode in range(num_episodes):
         if terminated:
             next_state = None
         else:
-            # take state. state will have N=1. remove first element in C dimension.
-            next_state = state[:,1:]
-            # then append observation in C dimension
-            observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
-            next_state = torch.cat((next_state,observation),dim=1)
-            # unsqueeze C. unsqueeze N.
-            # next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+            next_state = state # [1,C,H,W]
+            next_state = torch.roll(next_state, shifts=-1, dims=1)
+            next_state[:, -1] = torch.as_tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
 
-        # Store the transition in memory
         memory.push(state, action, next_state, reward)
-
-        # Move to the next state
         state = next_state
 
 
@@ -207,7 +178,8 @@ for i_episode in range(num_episodes):
         # Perform one step of the optimization (on the policy network)
         start = time.time()
         optimize_model()
-        print(f'optimize model: {(time.time() - start):.6f}seconds')
+        print(f'optimize model: {(time.time()-start):.6f}seconds')
+
         # Soft update of the target network's weights
         # θ′ ← τ θ + (1 −τ )θ′
         target_net_state_dict = target_net.state_dict()
@@ -216,12 +188,8 @@ for i_episode in range(num_episodes):
             target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
         target_net.load_state_dict(target_net_state_dict)
 
-        print(f'total time: {(time.time() - start_t):.6f}seconds')        
+        print(f't time: {(time.time()-start_t):.6f}seconds,    total time: {(time.time()-start_tt):.6f}seconds')        
         if done:
             episode_durations.append(t + 1)
             plot_durations()
             break
-
-plot_durations(show_result=True)
-plt.ioff()
-plt.show()

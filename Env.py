@@ -23,7 +23,7 @@ class Env:
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         
-        self.action_space_size = 13
+        self.action_space_size = 7
         self.steps = 0
         self.max_steps = 100
 
@@ -74,7 +74,7 @@ class Env:
 
 
     def step(self, action, gamma):
-        # print(f'action:{action}')
+        print(f'action:{action}')
         if action==0:
             obs = self.grasp()
         else:
@@ -169,18 +169,18 @@ class Env:
             dz = +dt
         elif action==6:
             dz = -dt
-        elif action==7:
-            droll = +dr
-        elif action==8:
-            droll = -dr
-        elif action==9:
-            dpitch = +dr
-        elif action==10:
-            dpitch = -dr
-        elif action==11:
-            dyaw = +dr
-        elif action==12:
-            dyaw = -dr
+        # elif action==7:
+        #     droll = +dr
+        # elif action==8:
+        #     droll = -dr
+        # elif action==9:
+        #     dpitch = +dr
+        # elif action==10:
+        #     dpitch = -dr
+        # elif action==11:
+        #     dyaw = +dr
+        # elif action==12:
+        #     dyaw = -dr
         delta = [dx,dy,dz,droll,dpitch,dyaw]
         # move arm and gripper
         self.robot.move_tcp(delta, delta_mode=True)
