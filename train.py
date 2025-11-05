@@ -35,10 +35,6 @@ LR = 0.0003 # LR is the learning rate of the ``AdamW`` optimizer
 
 
 
-
-
-
-# if GPU is to be used
 device = torch.device("cpu")
 steps_done = 0
 episode_durations = []
@@ -150,12 +146,12 @@ for i_episode in range(num_episodes):
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0) # [1,1,H,W]
     state = state.repeat(1, 4, 1, 1)  # [1,C,H,W]
+    
     for t in count():
         print(f'\n\n\nt:{t}\n')
         start_t = time.time()
-        # 1. RUN ENVIRONMENT
+        # 1. RUN ENVIRONMENT AND PUT INTO REPLAY MEMORY
         action = select_action(state)
-
         start = time.time()
         observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
         print(f'simulation step time: {(time.time()-start):.6f}seconds')
@@ -174,14 +170,13 @@ for i_episode in range(num_episodes):
         state = next_state
 
 
-        # 2. UPDATE VALUE FUNCTION -> UPDATE NN
+        # 2. TAKE FROM REPLAY MEMORY AND UPDATE NEURAL NETWORK
         # Perform one step of the optimization (on the policy network)
         start = time.time()
         optimize_model()
         print(f'optimize model: {(time.time()-start):.6f}seconds')
 
-        # Soft update of the target network's weights
-        # θ′ ← τ θ + (1 −τ )θ′
+        # Soft update of the target network's weights: θ′ ← τ θ + (1 −τ )θ′
         target_net_state_dict = target_net.state_dict()
         policy_net_state_dict = policy_net.state_dict()
         for key in policy_net_state_dict:
