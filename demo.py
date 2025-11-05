@@ -22,7 +22,7 @@ def user_control_demo():
         # print(f'obs:{obs}')
         # print(f'shoulder_torque:{env.robot.get_shoulder_torque()}')
         # print(f'gripper_torque:{env.robot.gripper.get_torque()}')
-        print(f'ray_offest:{env.reward.ray_offset()}')
+        # print(f'ray_offest:{env.reward.ray_offset()}')
 
 
 

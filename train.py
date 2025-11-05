@@ -5,6 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from collections import deque
 from itertools import count
+import time
 
 
 import torch
@@ -98,7 +99,7 @@ def select_action(state):
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * \
         math.exp(-1. * steps_done / EPS_DECAY)
-    print(f'eps_threshold:{eps_threshold}')
+    # print(f'eps_threshold:{eps_threshold}')
     steps_done += 1
     if sample > eps_threshold:
         with torch.no_grad():
@@ -171,9 +172,16 @@ for i_episode in range(num_episodes):
     state = state.unsqueeze(0)
     for t in count():
         print(f'\n\n\nt:{t}\n')
+        start_t = time.time()
         # 1. RUN ENVIRONMENT
+        start = time.time()
         action = select_action(state)
+        print(f'select action time: {(time.time() - start):.6f}seconds')
+
+        start = time.time()
         observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
+        print(f'simulation step time: {(time.time() - start):.6f}seconds')
+
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
@@ -197,7 +205,9 @@ for i_episode in range(num_episodes):
 
         # 2. UPDATE VALUE FUNCTION -> UPDATE NN
         # Perform one step of the optimization (on the policy network)
+        start = time.time()
         optimize_model()
+        print(f'optimize model: {(time.time() - start):.6f}seconds')
         # Soft update of the target network's weights
         # θ′ ← τ θ + (1 −τ )θ′
         target_net_state_dict = target_net.state_dict()
@@ -206,6 +216,7 @@ for i_episode in range(num_episodes):
             target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
         target_net.load_state_dict(target_net_state_dict)
 
+        print(f'total time: {(time.time() - start_t):.6f}seconds')        
         if done:
             episode_durations.append(t + 1)
             plot_durations()

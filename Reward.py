@@ -165,7 +165,7 @@ class Reward:
         obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
         cross = np.cross(gr_forw, obj_pos-gr_pos)
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
-        print(f'offset:{offset}')
+        # print(f'offset:{offset}')
         return offset
     
 

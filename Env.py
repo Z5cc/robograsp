@@ -74,14 +74,14 @@ class Env:
 
 
     def step(self, action, gamma):
-        print(f'action:{action}')
+        # print(f'action:{action}')
         if action==0:
             obs = self.grasp()
         else:
             obs = self.seek(action)
 
         reward = self.get_reward(gamma)
-        print(f'reward:{reward}')
+        # print(f'reward:{reward}')
 
         info = None
         self.steps += 1
@@ -92,11 +92,11 @@ class Env:
     
 
     def grasp(self):
-        print('approach')
+        # print('approach')
         self.approach()
-        print('close')
+        # print('close')
         liftable = self.close()
-        print('lift')
+        # print('lift')
         self.lift() if liftable else self.retreat()
         return self.get_observation()
     
@@ -123,7 +123,7 @@ class Env:
                 self.step_simulation()
             c=c+1 if self.robot.gripper.has_object(include_delta=True) else 0
             i=i+1
-            print(i)
+            # print(i)
             if c==4:
                 liftable=True
                 break
