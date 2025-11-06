@@ -2,6 +2,7 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 import time
+import gymnasium as gym
 
 from Reward import Reward
 from Camera import Camera
@@ -13,7 +14,7 @@ class FailToReachTargetError(RuntimeError):
     pass
 
 
-class Env:
+class Env(gym.Env):
 
     SIMULATION_STEP_DELAY = 1 / 240.
 

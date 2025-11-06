@@ -18,6 +18,7 @@ from DQN import Transition, ReplayMemory, DQN
 from Robot import Robot
 from Object import Object
 from Env import Env
+from gymnasium.vector import AsyncVectorEnv
 
 
 
@@ -39,9 +40,7 @@ device = torch.device("cpu")
 steps_done = 0
 episode_durations = []
 
-robot = Robot()
-object = Object()
-env = Env(robot,object)
+env = Env(Robot(),Object())
 h, w = env.camera.HEIGTH, env.camera.WIDTH
 n_actions = env.action_space_size
 policy_net = DQN(h, w, n_actions).to(device)
@@ -146,7 +145,7 @@ for i_episode in range(num_episodes):
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0) # [1,1,H,W]
     state = state.repeat(1, 4, 1, 1)  # [1,C,H,W]
-    
+
     for t in count():
         print(f'\n\n\nt:{t}\n')
         start_t = time.time()
@@ -158,7 +157,6 @@ for i_episode in range(num_episodes):
 
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
-
         if terminated:
             next_state = None
         else:

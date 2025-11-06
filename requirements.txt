@@ -7,3 +7,4 @@ pybullet
 scipy
 torch
 tqdm
+gymnasium
