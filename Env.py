@@ -18,13 +18,12 @@ class Env(gym.Env):
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object, vis=True) -> None:
+    def __init__(self, robot, object, vis) -> None:
         self.vis = vis
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         
-        self.action_space_size = 7
         self.steps = 0
         self.max_steps = 100
 
@@ -46,6 +45,9 @@ class Env(gym.Env):
         self.object.load()
         self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
         self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
+
+        self.action_space = gym.spaces.Discrete(7)
+        self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(self.camera.H,self.camera.W), dtype=np.float32)
 
         self.reset()
 
@@ -71,7 +73,7 @@ class Env(gym.Env):
         self.robot.move_tcp(delta, delta_mode=True)
         for _ in range(30):
             self.step_simulation()
-        return self.get_observation()
+        return self._get_obs()
 
 
     def step(self, action, gamma):
@@ -99,7 +101,7 @@ class Env(gym.Env):
         liftable = self.close()
         # print('lift')
         self.lift() if liftable else self.retreat()
-        return self.get_observation()
+        return self._get_obs()
     
     def approach(self):
         dx = 0.005
@@ -188,7 +190,7 @@ class Env(gym.Env):
         self.robot.open_gripper()
         for _ in range(30):
             self.step_simulation()
-        return self.get_observation()
+        return self._get_obs()
 
 
 
@@ -206,12 +208,8 @@ class Env(gym.Env):
 
 
 
-    def get_observation(self):
-        if isinstance(self.camera, Camera):
-            rgb, depth, seg = self.camera.shot()
-        else:
-            assert self.camera is None
-        return depth
+    def _get_obs(self):
+        return self.camera.shot()
 
     def get_reward(self,gamma):
         return self.reward.get_reward(gamma)
@@ -228,7 +226,7 @@ class Env(gym.Env):
 
         self.steps = 0
         info = None
-        return self.get_observation(), info
+        return self._get_obs(), info
 
 
     def disconnect(self):

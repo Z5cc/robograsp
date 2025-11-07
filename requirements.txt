@@ -8,3 +8,4 @@ scipy
 torch
 tqdm
 gymnasium
+stable-baselines3

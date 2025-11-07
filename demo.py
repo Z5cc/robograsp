@@ -7,9 +7,7 @@ from Env import Env
 
 
 def user_control_demo():
-    robot = Robot()
-    object = Object()
-    env = Env(robot, object)
+    env = Env(Robot(),Object(),vis=True)
     while True:
         debug_parameter = env.read_debug_parameter()
         delta, gr_delta = debug_parameter[0:6], debug_parameter[-1]

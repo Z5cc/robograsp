@@ -1,4 +1,4 @@
-import gymnasium as gym
+from stable_baselines3.common.vec_env import SubprocVecEnv
 import math
 import random
 import matplotlib
@@ -18,7 +18,7 @@ from DQN import Transition, ReplayMemory, DQN
 from Robot import Robot
 from Object import Object
 from Env import Env
-from gymnasium.vector import AsyncVectorEnv
+
 
 
 
@@ -33,22 +33,13 @@ EPS_DECAY = 5000 # EPS_DECAY controls the rate of exponential decay of epsilon, 
 TAU = 0.005 # TAU is the update rate of the target network
 LR = 0.0003 # LR is the learning rate of the ``AdamW`` optimizer
 
+NUM_EPISODES = 10000
+NUM_CPU = 1
+VIS = False
 
 
 
-device = torch.device("cpu")
-steps_done = 0
-episode_durations = []
 
-env = Env(Robot(),Object())
-h, w = env.camera.HEIGTH, env.camera.WIDTH
-n_actions = env.action_space_size
-policy_net = DQN(h, w, n_actions).to(device)
-target_net = DQN(h, w ,n_actions).to(device)
-target_net.load_state_dict(policy_net.state_dict())
-
-optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
-memory = ReplayMemory(10000)
 
 
 
@@ -131,58 +122,67 @@ def optimize_model():
 
 
 
+if __name__ == "__main__":
+    device = torch.device("cpu")
+
+    vec_env = SubprocVecEnv([lambda: Env(Robot(),Object(),vis=VIS) for _ in range(NUM_CPU)])
+    n_actions = vec_env.action_space.n
+    h, w = vec_env.observation_space.shape
+    policy_net = DQN(h, w, n_actions).to(device)
+    target_net = DQN(h, w ,n_actions).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+
+    optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
+    memory = ReplayMemory(10000)
+
+    steps_done = 0
+    episode_durations = []
 
 
 
+    start_tt = time.time()
+    for i_episode in range(NUM_EPISODES):
+        state, info = env.reset()
+        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0) # [1,1,H,W]
+        state = state.repeat(1, 4, 1, 1)  # [1,C,H,W]
 
-if torch.cuda.is_available() or torch.backends.mps.is_available():
-    num_episodes = 10000
-else:
-    num_episodes = 10000
+        for t in count():
+            print(f'\n\n\nt:{t}\n')
+            start_t = time.time()
+            # 1. RUN ENVIRONMENT AND PUT INTO REPLAY MEMORY
+            action = select_action(state)
+            start = time.time()
+            observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
+            print(f'simulation step time: {(time.time()-start):.6f}seconds')
 
-start_tt = time.time()
-for i_episode in range(num_episodes):
-    state, info = env.reset()
-    state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0) # [1,1,H,W]
-    state = state.repeat(1, 4, 1, 1)  # [1,C,H,W]
+            reward = torch.tensor([reward], device=device)
+            done = terminated or truncated
+            if terminated:
+                next_state = None
+            else:
+                next_state = state # [1,C,H,W]
+                next_state = torch.roll(next_state, shifts=-1, dims=1)
+                next_state[:, -1] = torch.as_tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
 
-    for t in count():
-        print(f'\n\n\nt:{t}\n')
-        start_t = time.time()
-        # 1. RUN ENVIRONMENT AND PUT INTO REPLAY MEMORY
-        action = select_action(state)
-        start = time.time()
-        observation, reward, terminated, truncated, info = env.step(action.item(),GAMMA)
-        print(f'simulation step time: {(time.time()-start):.6f}seconds')
-
-        reward = torch.tensor([reward], device=device)
-        done = terminated or truncated
-        if terminated:
-            next_state = None
-        else:
-            next_state = state # [1,C,H,W]
-            next_state = torch.roll(next_state, shifts=-1, dims=1)
-            next_state[:, -1] = torch.as_tensor(observation, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
-
-        memory.push(state, action, next_state, reward)
-        state = next_state
+            memory.push(state, action, next_state, reward)
+            state = next_state
 
 
-        # 2. TAKE FROM REPLAY MEMORY AND UPDATE NEURAL NETWORK
-        # Perform one step of the optimization (on the policy network)
-        start = time.time()
-        optimize_model()
-        print(f'optimize model: {(time.time()-start):.6f}seconds')
+            # 2. TAKE FROM REPLAY MEMORY AND UPDATE NEURAL NETWORK
+            # Perform one step of the optimization (on the policy network)
+            start = time.time()
+            optimize_model()
+            print(f'optimize model: {(time.time()-start):.6f}seconds')
 
-        # Soft update of the target network's weights: θ′ ← τ θ + (1 −τ )θ′
-        target_net_state_dict = target_net.state_dict()
-        policy_net_state_dict = policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
-        target_net.load_state_dict(target_net_state_dict)
+            # Soft update of the target network's weights: θ′ ← τ θ + (1 −τ )θ′
+            target_net_state_dict = target_net.state_dict()
+            policy_net_state_dict = policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+            target_net.load_state_dict(target_net_state_dict)
 
-        print(f't time: {(time.time()-start_t):.6f}seconds,    total time: {(time.time()-start_tt):.6f}seconds')        
-        if done:
-            episode_durations.append(t + 1)
-            plot_durations()
-            break
+            print(f't time: {(time.time()-start_t):.6f}seconds,    total time: {(time.time()-start_tt):.6f}seconds')        
+            if done:
+                episode_durations.append(t + 1)
+                plot_durations()
+                break
