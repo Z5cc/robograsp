@@ -3,12 +3,13 @@ import numpy as np
 
 
 class Reward:
-    def __init__(self, id_robot, id_base_link, id_tcp_link, id_object, gripper_range):
+    def __init__(self, id_robot, id_base_link, id_tcp_link, id_object, gripper_range, gamma):
         self.id_robot = id_robot
         self.id_base_link = id_base_link
         self.id_tcp_link = id_tcp_link
         self.id_object = id_object
         self.gripper_range = gripper_range
+        self.gamma = gamma
         self.potential = 0
 
 
@@ -17,9 +18,9 @@ class Reward:
 
 
 
-    def get_reward(self, gamma):
+    def get_reward(self):
         next_potential = self.get_potential()
-        r = gamma*next_potential-self.potential
+        r = self.gamma*next_potential-self.potential
         self.potential = next_potential
         return r
 

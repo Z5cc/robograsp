@@ -3,6 +3,7 @@ import pybullet as p
 import pybullet_data
 import time
 import gymnasium as gym
+from typing import Optional
 
 from Reward import Reward
 from Camera import Camera
@@ -18,7 +19,7 @@ class Env(gym.Env):
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object, vis) -> None:
+    def __init__(self, robot, object, vis, gamma=None) -> None:
         self.vis = vis
         self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -44,7 +45,7 @@ class Env(gym.Env):
         self.object = object
         self.object.load()
         self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
+        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range, gamma)
 
         self.action_space = gym.spaces.Discrete(7)
         self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(self.camera.H,self.camera.W), dtype=np.float32)
@@ -76,17 +77,17 @@ class Env(gym.Env):
         return self._get_obs()
 
 
-    def step(self, action, gamma):
-        print(f'action:{action}')
+    def step(self, action):
+        # print(f'action:{action}')
         if action==0:
             obs = self.grasp()
         else:
             obs = self.seek(action)
 
-        reward = self.get_reward(gamma)
+        reward = self.get_reward()
         # print(f'reward:{reward}')
 
-        info = None
+        info = {}
         self.steps += 1
         truncated = self.steps >= self.max_steps
         terminated = (self.reward.successfull_grasp()==True)  or (self.robot.object_is_in_boundaries(self.object.id)==False)
@@ -211,13 +212,15 @@ class Env(gym.Env):
     def _get_obs(self):
         return self.camera.shot()
 
-    def get_reward(self,gamma):
-        return self.reward.get_reward(gamma)
+    def get_reward(self):
+        return self.reward.get_reward()
 
 
 
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
+        super().reset(seed=seed)
+
         obj_pos = self.object.reset()
         self.robot.reset(obj_pos)
         self.reward.reset()
@@ -225,8 +228,9 @@ class Env(gym.Env):
             self.step_simulation()
 
         self.steps = 0
-        info = None
-        return self._get_obs(), info
+        obs = self._get_obs()
+        info = {}
+        return obs, info
 
 
     def disconnect(self):
