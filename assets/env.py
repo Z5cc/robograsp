@@ -1,42 +1,22 @@
 import numpy as np
 import pybullet as p
 import pybullet_data
-import time
 import gymnasium as gym
 from typing import Optional
 
 from CONSTANTS import *
 from assets.reward import Reward
 from assets.camera import Camera
-from assets.object import Object
-from assets.robot import Robot
-
-
-class FailToReachTargetError(RuntimeError):
-    pass
 
 
 class Env(gym.Env):
-
-    SIMULATION_STEP_DELAY = 1 / 240.
 
     def __init__(self, robot, object) -> None:
         self.physicsClient = p.connect(p.GUI if VIS else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
-        
         self.steps = 0
         self.max_steps = 100
-
-        # custom sliders to tune parameters (name of the parameter,range,initial value)
-        self.dxin = p.addUserDebugParameter("dx", -0.001, 0.001, 0)
-        self.dyin = p.addUserDebugParameter("dy", -0.001, 0.001, 0)
-        self.dzin = p.addUserDebugParameter("dz", -0.001, 0.001, 0)
-        self.drollId = p.addUserDebugParameter("droll", -0.5, 0.5, 0)
-        self.dpitchId = p.addUserDebugParameter("dpitch", -0.5, 0.5, 0)
-        self.dyawId = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
-        self.gripper_opening_length_control = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
-
         
         # LOADING ENTITIES INTO THE ENVIRONMENT
         self.planeID = p.loadURDF("plane.urdf")
@@ -52,31 +32,12 @@ class Env(gym.Env):
 
         self.reset()
 
-
-
-    def read_debug_parameter(self):
-        # read the value of task parameter
-        dx = p.readUserDebugParameter(self.dxin)
-        dy = p.readUserDebugParameter(self.dyin)
-        dz = p.readUserDebugParameter(self.dzin)
-        droll = p.readUserDebugParameter(self.drollId)
-        dpitch = p.readUserDebugParameter(self.dpitchId)
-        dyaw = p.readUserDebugParameter(self.dyawId)
-        gripper_opening_length = p.readUserDebugParameter(self.gripper_opening_length_control)
-
-        return dx, dy, dz, droll, dpitch, dyaw, gripper_opening_length
-
-        
-
-
-
     def step_demo(self, delta, gr_delta):
         self.robot.move_gripper(gr_delta)
         self.robot.move_tcp(delta, delta_mode=True)
         for _ in range(30):
             self.step_simulation()
         return self._get_obs()
-
 
     def step(self, action):
         # print(f'action:{action}')
@@ -94,7 +55,6 @@ class Env(gym.Env):
         terminated = (self.reward.successfull_grasp()==True)  or (self.robot.object_is_in_boundaries(self.object.id)==False)
 
         return obs, reward, terminated, truncated, info
-    
 
     def grasp(self):
         # print('approach')
@@ -116,7 +76,6 @@ class Env(gym.Env):
                 self.step_simulation()
             x = self.robot.get_t_in_tcp_system()[0]
             x_approach_stop = x_old+0.9*dx > x # if x does not reach the goal of x_old+0.9*dx
-
 
     def close(self):
         liftable=False

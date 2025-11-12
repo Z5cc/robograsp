@@ -18,7 +18,6 @@ class Object:
         self.load()
         return self.pos
 
-
     def load(self):
         if self.random:
             self.orn = random_quaternion()

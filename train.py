@@ -46,7 +46,7 @@ for i_episode  in range(NUM_EPISODES):
         next_state = state_handler.update_state(state, obs)
         reward = torch.tensor([reward]).to(device=DEVICE)
         terminated = torch.tensor([terminated]).to(device=DEVICE)
-        memory.push(state, action, next_state, reward, terminated) # [N,C,H,W] [N] [N,C,H,W] [N] [N] N dimension for torch.cat(batch.state)
+        memory.push(state, action, next_state, reward, terminated) # [N,C,H,W] [N] [N,C,H,W] [N] [N]
         # 1.3 update state
         state = next_state
 

@@ -30,25 +30,9 @@ class Camera:
         _projection_matrix = np.array(self.projection_matrix).reshape((4, 4), order='F')
         self.tran_pix_world = np.linalg.inv(_projection_matrix @ _view_matrix)
 
-
         # Get depth values using the OpenGL renderer
         _w, _h, _, depthImg, _ = p.getCameraImage(W, H,
                                                    self.view_matrix, self.projection_matrix,flags=p.ER_NO_SEGMENTATION_MASK
                                                    )
         depth = self.FAR*self.NEAR/(self.FAR-(self.FAR-self.NEAR)*depthImg)
         return depth
-
-    def approach_stop(self):
-        _, depth, _ = self.shot()
-        row_9, row_10, row_11 = depth[9], depth[10], depth[11]
-        row_9, row_10, row_11 = row_9[5:12], row_10[5:12], row_11[5:12]
-        for c in row_9:
-            if c<0.0931:
-                return True
-        for c in row_10:
-            if c<0.0945:
-                return True
-        for c in row_11:
-            if c<0.0960:
-                return True
-        return False

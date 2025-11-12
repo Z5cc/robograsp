@@ -9,6 +9,7 @@ DEVICE = 'cpu'
 NUM_EPISODES = 10000
 
 VIS = True
+SIMULATION_STEP_DELAY = 1 / 240.
 
 C = 4
 H = 16
