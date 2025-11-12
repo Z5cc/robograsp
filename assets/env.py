@@ -5,39 +5,34 @@ import gymnasium as gym
 from typing import Optional
 
 from CONSTANTS import *
-from assets.reward import Reward
+from assets.rewardhandler import RewardHandler
+from assets.actionhandler import ActionHandler
 from assets.camera import Camera
 
 
 class Env(gym.Env):
 
-    def __init__(self, robot, object) -> None:
+    def __init__(self, robot, obj) -> None:
         self.physicsClient = p.connect(p.GUI if VIS else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         self.steps = 0
         self.max_steps = 100
-        
-        # LOADING ENTITIES INTO THE ENVIRONMENT
+        # load physical assets
         self.planeID = p.loadURDF("plane.urdf")
         self.robot = robot
         self.robot.load()
-        self.object = object
-        self.object.load()
+        self.obj = obj
+        self.obj.load()
         self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
-
+        # load handler
+        self.reward_handler = RewardHandler(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.obj.id, self.robot.gripper.gripper_range)
+        self.action_handler = ActionHandler()
+        # based on load
         self.action_space = gym.spaces.Discrete(N_ACTIONS)
         self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(H,W), dtype=np.float32)
-
         self.reset()
 
-    def step_demo(self, delta, gr_delta):
-        self.robot.move_gripper(gr_delta)
-        self.robot.move_tcp(delta, delta_mode=True)
-        for _ in range(30):
-            self.step_simulation()
-        return self._get_obs()
 
     def step(self, action):
         # print(f'action:{action}')
@@ -52,9 +47,41 @@ class Env(gym.Env):
         info = {}
         self.steps += 1
         truncated = self.steps >= self.max_steps
-        terminated = (self.reward.successfull_grasp()==True)  or (self.robot.object_is_in_boundaries(self.object.id)==False)
+        terminated = (self.reward_handler.successfull_grasp()==True)  or (self.robot.obj_is_in_boundaries(self.obj.id)==False)
 
         return obs, reward, terminated, truncated, info
+
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
+        super().reset(seed=seed)
+
+        obj_pos = self.obj.reset()
+        self.robot.reset(obj_pos)
+        self.reward_handler.reset()
+        for _ in range(30):
+            self.step_simulation()
+
+        self.steps = 0
+        obs = self._get_obs()
+        info = {}
+        return obs, info
+
+
+    def disconnect(self):
+            p.disconnect(self.physicsClient)
+
+
+
+
+
+
+    def step_demo(self, delta, gr_delta):
+        self.robot.move_gripper(gr_delta)
+        self.robot.move_tcp(delta, delta_mode=True)
+        for _ in range(30):
+            self.step_simulation()
+        return self._get_obs()
+
+
 
     def grasp(self):
         # print('approach')
@@ -85,7 +112,7 @@ class Env(gym.Env):
             self.robot.gripper.save_angle()
             for _ in range(60):
                 self.step_simulation()
-            c=c+1 if self.robot.gripper.has_object(include_delta=True) else 0
+            c=c+1 if self.robot.gripper.has_obj(include_delta=True) else 0
             i=i+1
             # print(i)
             if c==4:
@@ -101,7 +128,7 @@ class Env(gym.Env):
             self.robot.move_tcp(pos+orn)
             for _ in range(30):
                 self.step_simulation()
-            if not self.robot.gripper.has_object(include_delta=False):
+            if not self.robot.gripper.has_obj(include_delta=False):
                 self.retreat()
                 break
 
@@ -173,25 +200,9 @@ class Env(gym.Env):
         return self.camera.shot()
 
     def get_reward(self):
-        return self.reward.get_reward()
+        return self.reward_handler.get_reward()
 
 
 
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
-        super().reset(seed=seed)
 
-        obj_pos = self.object.reset()
-        self.robot.reset(obj_pos)
-        self.reward.reset()
-        for _ in range(30):
-            self.step_simulation()
-
-        self.steps = 0
-        obs = self._get_obs()
-        info = {}
-        return obs, info
-
-
-    def disconnect(self):
-            p.disconnect(self.physicsClient)

@@ -2,7 +2,7 @@ import pybullet as p
 import time
 
 from assets.robot import Robot
-from assets.object import Object
+from assets.obj import Obj
 from assets.env import Env
 
 
@@ -18,7 +18,7 @@ def read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_i
     return dx, dy, dz, droll, dpitch, dyaw, gr
 
 
-env = Env(Robot(),Object())
+env = Env(Robot(),Obj())
 # custom sliders to tune parameters (name of the parameter,range,initial value)
 dx_in = p.addUserDebugParameter("dx", -0.001, 0.001, 0)
 dy_in = p.addUserDebugParameter("dy", -0.001, 0.001, 0)
@@ -32,7 +32,7 @@ while True:
     debug_parameter = read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_in)
     delta, gr_delta = debug_parameter[0:6], debug_parameter[-1]
     obs = env.step_demo(delta,gr_delta)
-    # lo, hi = p.getAABB(object.id)
+    # lo, hi = p.getAABB(obj.id)
     # print(f'lo:{lo}')
     # print(f'hi:{hi}')
     # print(f'obs:{obs}')

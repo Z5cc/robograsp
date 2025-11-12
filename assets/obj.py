@@ -6,7 +6,8 @@ import random
 from assets.utilities import random_quaternion
 
 
-class Object:
+class Obj:
+    
     def __init__(self, pos=None, orn=None, index=None):
         self.random = pos is None or orn is None or index is None
         self.index = index

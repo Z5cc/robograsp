@@ -3,14 +3,14 @@ import numpy as np
 import torch
 
 from Robot import Robot
-from Object import Object
+from Obj import Obj
 from Env import Env
 import train
 
 def test_grasp():
     robot = Robot(TCP_TARGET=(0,0,0))
-    object = Object(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
-    env = Env(robot,object,vis=True)
+    obj = Obj(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
+    env = Env(robot,obj,vis=True)
     env.grasp()
     assert env.reward.successfull_grasp()
 

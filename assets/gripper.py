@@ -78,7 +78,7 @@ class Gripper():
 
     # regarding angle_THOLD: 0.776rad are 0.003m in absolute, smaller angle -> bigger open_width
     # regarding delta_THOLD: 0.01rad are equivalent to 0.001m in relative
-    def has_object(self, include_delta, torque_THOLD=2, angle_THOLD=0.776, delta_THOLD=0.01):
+    def has_obj(self, include_delta, torque_THOLD=2, angle_THOLD=0.776, delta_THOLD=0.01):
         torque = self.get_torque()
         angle = self.get_angle()
         delta = self.old_angle-angle

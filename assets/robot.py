@@ -9,6 +9,7 @@ from assets.gripper import Gripper
 
 
 class Joint():
+    
     def __init__(self, index, joint_type, max_force, max_vel, controllable):
         self.index = index
         self.joint_type = joint_type
@@ -232,7 +233,7 @@ class Robot:
         # drive gripper to default open position
         self.gripper.reset()
 
-        # 5. let world settle -> done in env, because besides robot object also needs to settle
+        # 5. let world settle -> done in env, because besides robot obj also needs to settle
 
 
     def get_joint_obs(self):
@@ -247,6 +248,6 @@ class Robot:
     
 
 
-    def object_is_in_boundaries(self, id_object):
-        x, y, _ = p.getBasePositionAndOrientation(id_object)[0]
+    def obj_is_in_boundaries(self, id_obj):
+        x, y, _ = p.getBasePositionAndOrientation(id_obj)[0]
         return self.LL_T[0] < x < self.UL_T[0] and self.LL_T[1] < y < self.UL_T[1]

@@ -30,8 +30,8 @@ class Network(nn.Module):
         return x
 
 
-class DQN():
-    
+class DQNAgent():
+
     def __init__(self):
         self.policy_net = Network().to(DEVICE)
         self.target_net = Network().to(DEVICE)

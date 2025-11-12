@@ -4,12 +4,12 @@ import numpy as np
 from CONSTANTS import GAMMA
 
 
-class Reward:
-    def __init__(self, id_robot, id_base_link, id_tcp_link, id_object, gripper_range):
+class RewardHandler:
+    def __init__(self, id_robot, id_base_link, id_tcp_link, id_obj, gripper_range):
         self.id_robot = id_robot
         self.id_base_link = id_base_link
         self.id_tcp_link = id_tcp_link
-        self.id_object = id_object
+        self.id_obj = id_obj
         self.gripper_range = gripper_range
         self.potential = 0
 
@@ -40,7 +40,7 @@ class Reward:
 
     
     def successfull_grasp(self):
-        lo, hi = p.getAABB(self.id_object)
+        lo, hi = p.getAABB(self.id_obj)
         lowest_point_z = lo[2]
         return lowest_point_z>0.005
 
@@ -121,7 +121,7 @@ class Reward:
 
     def get_shortest_hit(self, hits, ray_length):
         absolute_fractions = (
-            hit[2] * ray_length if hit[0] == self.id_object else ray_length
+            hit[2] * ray_length if hit[0] == self.id_obj else ray_length
             for hit in hits
         )
         return min(absolute_fractions)
@@ -146,18 +146,18 @@ class Reward:
         inner_hits = self.get_hits(inner_froms,inner_tos)
         outer_shortest_hit = self.get_shortest_hit(outer_hits,ray_length)
         inner_shortest_hit = self.get_shortest_hit(inner_hits,ray_length)
-        object_hit = outer_shortest_hit<ray_length or inner_shortest_hit<ray_length
+        obj_hit = outer_shortest_hit<ray_length or inner_shortest_hit<ray_length
         delta = outer_shortest_hit - inner_shortest_hit
         graspable = inner_shortest_hit < graspable_reach
         p.removeAllUserDebugItems()
 
         d = max(min(outer_shortest_hit, inner_shortest_hit)-graspable_reach,0)
-        return object_hit, d, delta, graspable
+        return obj_hit, d, delta, graspable
     
 
     def ray_offset(self):
-        # get object position
-        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+        # get obj position
+        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_obj)
 
         # get straight
         gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
@@ -175,7 +175,7 @@ class Reward:
 
 
 
-    # def distance_tcp_object(self):
+    # def distance_tcp_obj(self):
     #     gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
-    #     obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_object)
+    #     obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_obj)
     #     return np.linalg.norm(np.array(gr_pos)-np.array(obj_pos))

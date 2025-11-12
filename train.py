@@ -4,9 +4,9 @@ from itertools import count
 
 from CONSTANTS import *
 from assets.robot import Robot
-from assets.object import Object
+from assets.obj import Obj
 from assets.env import Env
-from algorithms.dqn import DQN
+from algorithms.dqnagent import DQNAgent
 from algorithms.replaymemory import ReplayMemory
 from algorithms.statehandler import StateHandler
 
@@ -26,8 +26,8 @@ def plot_durations(episode_durations):
     plt.pause(0.001)
 
 
-env = Env(Robot(),Object())
-dqn = DQN()
+env = Env(Robot(),Obj())
+agent = DQNAgent()
 memory = ReplayMemory(10000)
 state_handler = StateHandler()
 episode_durations = []
@@ -39,7 +39,7 @@ for i_episode  in range(NUM_EPISODES):
     for t in count():
         # 1. RUN ENVIRONMENT AND PUT INTO REPLAY MEMORY
         # 1.1 run environment
-        action = dqn.select_action(state)
+        action = agent.select_action(state)
         obs, reward, terminated, truncated, info = env.step(action.item())
         # 1.2 process results from run and put into memory
         done = terminated or truncated
@@ -54,9 +54,9 @@ for i_episode  in range(NUM_EPISODES):
         # 2.1 Perform one step of the optimization on the policy network
         s_batch, a_batch, ns_batch, r_batch, t_batch = memory.sample() # [N,C,H,W] [N] [N,C,H,W] [N] [N]
         if s_batch is not None:
-            dqn.optimize_model(s_batch, a_batch, ns_batch, r_batch, t_batch)
+            agent.optimize_model(s_batch, a_batch, ns_batch, r_batch, t_batch)
         # 2.2 Soft update of the target network's weights: θ′ ← τ θ + (1 −τ )θ′
-        dqn.soft_update()
+        agent.soft_update()
 
         if done:
             episode_durations.append(t+1)
