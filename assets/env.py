@@ -5,10 +5,11 @@ import time
 import gymnasium as gym
 from typing import Optional
 
-from Reward import Reward
-from Camera import Camera
-from Object import Object
-from Robot import Robot
+from CONSTANTS import *
+from assets.reward import Reward
+from assets.camera import Camera
+from assets.object import Object
+from assets.robot import Robot
 
 
 class FailToReachTargetError(RuntimeError):
@@ -19,9 +20,8 @@ class Env(gym.Env):
 
     SIMULATION_STEP_DELAY = 1 / 240.
 
-    def __init__(self, robot, object, vis, gamma=None) -> None:
-        self.vis = vis
-        self.physicsClient = p.connect(p.GUI if self.vis else p.DIRECT)
+    def __init__(self, robot, object) -> None:
+        self.physicsClient = p.connect(p.GUI if VIS else p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         
@@ -45,12 +45,13 @@ class Env(gym.Env):
         self.object = object
         self.object.load()
         self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range, gamma)
+        self.reward = Reward(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.object.id, self.robot.gripper.gripper_range)
 
-        self.action_space = gym.spaces.Discrete(7)
-        self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(self.camera.H,self.camera.W), dtype=np.float32)
+        self.action_space = gym.spaces.Discrete(N_ACTIONS)
+        self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(H,W), dtype=np.float32)
 
         self.reset()
+
 
 
     def read_debug_parameter(self):
@@ -197,7 +198,7 @@ class Env(gym.Env):
 
     def step_simulation(self):
         p.stepSimulation()
-        if self.vis:
+        if VIS:
             pass
             # time.sleep(self.SIMULATION_STEP_DELAY)    
 

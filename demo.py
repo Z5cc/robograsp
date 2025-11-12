@@ -1,9 +1,9 @@
 import pybullet as p
 import time
 
-from Robot import Robot
-from Object import Object
-from Env import Env
+from assets.robot import Robot
+from assets.object import Object
+from assets.env import Env
 
 
 def user_control_demo():

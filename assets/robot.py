@@ -4,7 +4,7 @@ import quaternion
 import random
 from scipy.spatial.transform import Rotation as R
 
-from Gripper import Gripper
+from assets.gripper import Gripper
 
 
 
@@ -36,7 +36,7 @@ class Robot:
 
     def load(self):
         # LOADING
-        self.id = p.loadURDF('./urdf/ur5_robotiq_85.urdf', self.BASE_POS, self.BASE_ORN,
+        self.id = p.loadURDF('./assets/urdf/ur5_robotiq_85.urdf', self.BASE_POS, self.BASE_ORN,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.arm_num_dofs = 6
         self.arm_rest_poses = [-1.8427108144422384,-1.783986598255091,1.9232743283452045,-1.9004039537122694,-1.5180998101236258,-0.2668835598602039]

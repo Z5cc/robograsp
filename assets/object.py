@@ -3,7 +3,7 @@ from pathlib import Path
 import pybullet_data
 import random
 
-from Utilities import random_quaternion
+from assets.utilities import random_quaternion
 
 
 class Object:

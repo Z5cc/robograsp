@@ -1,6 +1,8 @@
 import pybullet as p
 import numpy as np
 
+from CONSTANTS import H,W
+
 
 class Camera:
     """
@@ -10,7 +12,6 @@ class Camera:
     def __init__(self, id_robot, id_lens_link):
         self.id_robot = id_robot
         self.id_lens_link = id_lens_link
-        self.H, self.W = (16, 16)
         self.NEAR, self.FAR = 0.01, 5
         self.FOV = 50
 
@@ -21,7 +22,7 @@ class Camera:
         up = rot_matrix[:, 2]
         cam_tar = cam_pos+forward
 
-        aspect = self.W / self.H
+        aspect = W / H
         self.view_matrix = p.computeViewMatrix(cam_pos, cam_tar, up)
         self.projection_matrix = p.computeProjectionMatrixFOV(self.FOV, aspect, self.NEAR, self.FAR)
 
@@ -31,7 +32,7 @@ class Camera:
 
 
         # Get depth values using the OpenGL renderer
-        _w, _h, _, depthImg, _ = p.getCameraImage(self.W, self.H,
+        _w, _h, _, depthImg, _ = p.getCameraImage(W, H,
                                                    self.view_matrix, self.projection_matrix,flags=p.ER_NO_SEGMENTATION_MASK
                                                    )
         depth = self.FAR*self.NEAR/(self.FAR-(self.FAR-self.NEAR)*depthImg)
