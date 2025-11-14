@@ -95,77 +95,137 @@ class Robot:
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_pose,
                                     force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)
             
-    def delta_to_absolute(self, delta):
-        dt_TCP = np.array(delta[0:3])
-        dr_TCP = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_TCP derived from intrinsic euler angles
 
-        # 1. get current tcp pose in world frame
-        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
-        t = np.array(state_TCP[0])  # translation
-        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
-        
-        # 2. translation
-        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        dt = R_TCP_W @ dt_TCP # from local to global world frame
-        t += dt
-
-        # 3. rotation
-        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
-        dr_TCP = np.quaternion(dr_TCP[3],dr_TCP[0],dr_TCP[1],dr_TCP[2])
-        r = r * dr_TCP # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
-        
-        t = t.tolist()
-
-        t = self.clamp_t(t,self.LL_T,self.UL_T)
-        r = self.clamp_r(r,self.TCP_CENTER,self.CONE_TAR,self.CONE_PHI)
-
-        r = [r.x,r.y,r.z,r.w]
-        return t + r
-    
-    def get_t_in_tcp_system(self):
-        """
-        return t, but in the tcp coordinate system with the axis according to current tcp orientation
-        """
-        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
-        t = np.array(state_TCP[0])  # translation
-        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
-
-        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        R_W_TCP = np.transpose(R_TCP_W)
-        t = R_W_TCP @ t
-        return t
-
-    def clamp_t(self,t,ll_t,ul_t):
-        t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
-        return t
-
-    def clamp_r(self,r,tcp_center,CONE_TAR,CONE_PHI):
-        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding CONE_PHI
-        cone_vec = CONE_TAR - tcp_center
-        cone_vec = cone_vec / np.linalg.norm(cone_vec)
-        # calculate alpha
-        x_e = np.array([1,0,0])
-        q_e = np.quaternion(0,*x_e) # w,x,y,z
-        q_t = r*q_e*r.conj()
-        x_t = np.array([q_t.x,q_t.y,q_t.z])
-        x_t = x_t / np.linalg.norm(x_t)
-        alpha = np.arccos(np.dot(cone_vec, x_t))
-
-        if alpha>CONE_PHI:
-            # calculate n
-            n = np.cross(x_t,cone_vec)
-            n = n/np.linalg.norm(n)
-            n_x, n_y, n_z = n[0], n[1], n[2]
-            alpha_b = alpha - CONE_PHI
-            sin_half = np.sin(alpha_b/2)
-            cos_half = np.cos(alpha_b/2)
-            r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
-            r = r_back*r
-            return r
-        
-        return r
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def grasp(self):
+        yield from self.approach()
+        liftable = yield from self.close()
+        if liftable:
+            yield from self.lift()
+        else:
+            yield from self.retreat()   
+             
+    def approach(self):
+        dx = 0.005
+        delta = [dx,0,0,0,0,0,0]
+        x_approach_stop = False
+        while not (x_approach_stop):
+            x_old = self.get_t_in_tcp_system()[0]
+            self.move_tcp(delta,delta_mode=True)
+            yield 30
+            x = self.get_t_in_tcp_system()[0]
+            x_approach_stop = x_old+0.9*dx > x # if x does not reach the goal of x_old+0.9*dx
+
+    def close(self):
+        liftable=False
+        self.close_gripper()
+        c,i=0,0
+        while (not self.gripper.gr_closed()) and (i<100):
+            self.gripper.save_angle()
+            yield 60
+            c=c+1 if self.gripper.has_obj(include_delta=True) else 0
+            i=i+1
+            # print(i)
+            if c==4:
+                liftable=True
+                break
+        return liftable
+
+    def lift(self):
+        pos, orn, *_ = p.getLinkState(self.id, self.id_tcp_link)
+        pos, orn = list(pos), list(orn)
+        while pos[2]<0.2: # lift in z direction
+            pos[2]+=0.01
+            self.move_tcp(pos+orn)
+            yield 30
+            if not self.gripper.has_obj(include_delta=False):
+                yield from self.retreat()
+                break
+
+    def retreat(self):
+        self.open_gripper()
+        delta = [-0.01,0,0,0,0,0,0]
+        for _ in range(5):
+            self.move_tcp(delta,delta_mode=True)
+            yield 30
+
+
+
+
+
+
+
+
+
+
+    def seek(self,action):
+        # default inits
+        dx,dy,dz = 0,0,0
+        droll,dpitch,dyaw=0,0,0
+        # default deltas
+        dt = 0.015
+        dr = 0.05
+        if action==1:
+            dx = +dt
+        elif action==2:
+            dx = -dt
+        elif action==3:
+            dy = +dt
+        elif action==4:
+            dy = -dt
+        elif action==5:
+            dz = +dt
+        elif action==6:
+            dz = -dt
+        # elif action==7:
+        #     droll = +dr
+        # elif action==8:
+        #     droll = -dr
+        # elif action==9:
+        #     dpitch = +dr
+        # elif action==10:
+        #     dpitch = -dr
+        # elif action==11:
+        #     dyaw = +dr
+        # elif action==12:
+        #     dyaw = -dr
+        delta = [dx,dy,dz,droll,dpitch,dyaw]
+        # move arm and gripper
+        self.move_tcp(delta, delta_mode=True)
+        self.open_gripper()
+        yield 30
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
 
 
@@ -180,7 +240,8 @@ class Robot:
     def close_gripper(self):
         self.gripper.close()
 
-
+    def get_gripper_range(self):
+        return self.gripper.gripper_range
 
 
 
@@ -251,3 +312,104 @@ class Robot:
     def obj_is_in_boundaries(self, id_obj):
         x, y, _ = p.getBasePositionAndOrientation(id_obj)[0]
         return self.LL_T[0] < x < self.UL_T[0] and self.LL_T[1] < y < self.UL_T[1]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def delta_to_absolute(self, delta):
+        dt_TCP = np.array(delta[0:3])
+        dr_TCP = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_TCP derived from intrinsic euler angles
+
+        # 1. get current tcp pose in world frame
+        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
+        t = np.array(state_TCP[0])  # translation
+        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
+        
+        # 2. translation
+        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        dt = R_TCP_W @ dt_TCP # from local to global world frame
+        t += dt
+
+        # 3. rotation
+        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
+        dr_TCP = np.quaternion(dr_TCP[3],dr_TCP[0],dr_TCP[1],dr_TCP[2])
+        r = r * dr_TCP # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
+        
+        t = t.tolist()
+
+        t = self.clamp_t(t,self.LL_T,self.UL_T)
+        r = self.clamp_r(r,self.TCP_CENTER,self.CONE_TAR,self.CONE_PHI)
+
+        r = [r.x,r.y,r.z,r.w]
+        return t + r
+    
+    def get_t_in_tcp_system(self):
+        """
+        return t, but in the tcp coordinate system with the axis according to current tcp orientation
+        """
+        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
+        t = np.array(state_TCP[0])  # translation
+        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
+
+        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
+        R_W_TCP = np.transpose(R_TCP_W)
+        t = R_W_TCP @ t
+        return t
+
+
+
+    def clamp_t(self,t,ll_t,ul_t):
+        t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
+        return t
+
+    def clamp_r(self,r,tcp_center,CONE_TAR,CONE_PHI):
+        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding CONE_PHI
+        cone_vec = CONE_TAR - tcp_center
+        cone_vec = cone_vec / np.linalg.norm(cone_vec)
+        # calculate alpha
+        x_e = np.array([1,0,0])
+        q_e = np.quaternion(0,*x_e) # w,x,y,z
+        q_t = r*q_e*r.conj()
+        x_t = np.array([q_t.x,q_t.y,q_t.z])
+        x_t = x_t / np.linalg.norm(x_t)
+        alpha = np.arccos(np.dot(cone_vec, x_t))
+
+        if alpha>CONE_PHI:
+            # calculate n
+            n = np.cross(x_t,cone_vec)
+            n = n/np.linalg.norm(n)
+            n_x, n_y, n_z = n[0], n[1], n[2]
+            alpha_b = alpha - CONE_PHI
+            sin_half = np.sin(alpha_b/2)
+            cos_half = np.cos(alpha_b/2)
+            r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
+            r = r_back*r
+            return r
+        
+        return r

@@ -2,10 +2,10 @@ import pybullet as p
 import numpy as np
 import torch
 
-from Robot import Robot
-from Obj import Obj
-from Env import Env
-import train
+from assets.robot import Robot
+from assets.obj import Obj
+from assets.env import Env
+
 
 def test_grasp():
     robot = Robot(TCP_TARGET=(0,0,0))
