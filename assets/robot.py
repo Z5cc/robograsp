@@ -163,47 +163,25 @@ class Robot:
             self.move_tcp(delta,delta_mode=True)
             yield 30
 
-
-
-
-
-
-
-
-
-
     def seek(self,action):
-        # default inits
-        dx,dy,dz = 0,0,0
-        droll,dpitch,dyaw=0,0,0
         # default deltas
         dt = 0.015
         dr = 0.05
-        if action==1:
-            dx = +dt
-        elif action==2:
-            dx = -dt
-        elif action==3:
-            dy = +dt
-        elif action==4:
-            dy = -dt
-        elif action==5:
-            dz = +dt
-        elif action==6:
-            dz = -dt
-        # elif action==7:
-        #     droll = +dr
-        # elif action==8:
-        #     droll = -dr
-        # elif action==9:
-        #     dpitch = +dr
-        # elif action==10:
-        #     dpitch = -dr
-        # elif action==11:
-        #     dyaw = +dr
-        # elif action==12:
-        #     dyaw = -dr
-        delta = [dx,dy,dz,droll,dpitch,dyaw]
+        delta_lookup = {
+            1:  [ dt, 0 , 0 , 0 , 0 , 0 ],
+            2:  [-dt, 0 , 0 , 0 , 0 , 0 ],
+            3:  [ 0 , dt, 0 , 0 , 0 , 0 ],
+            4:  [ 0 ,-dt, 0 , 0 , 0 , 0 ],
+            5:  [ 0 , 0 , dt, 0 , 0 , 0 ],
+            6:  [ 0 , 0 ,-dt, 0 , 0 , 0 ],
+            7:  [ 0 , 0 ,  0, dr, 0 , 0 ],
+            8:  [ 0 , 0 ,  0,-dr, 0 , 0 ],
+            9:  [ 0 , 0 ,  0, 0 , dr, 0 ],
+            10: [ 0 , 0 ,  0, 0 ,-dr, 0 ],
+            11: [ 0 , 0 ,  0, 0 , 0 , dr],
+            12: [ 0 , 0 ,  0, 0 , 0 ,-dr],
+        }
+        delta = delta_lookup[action]
         # move arm and gripper
         self.move_tcp(delta, delta_mode=True)
         self.open_gripper()

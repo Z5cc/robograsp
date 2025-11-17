@@ -36,9 +36,11 @@ class Env(gym.Env):
     def step(self, action):
         if action==0:
             steps_generator = self.robot.grasp()
-        else:
+        elif 0<action<N_ACTIONS:    # N_ACTIONS=13 leads to action=0 until action=12
             steps_generator = self.robot.seek(action)
-
+        else:
+            raise ValueError
+        
         for steps in steps_generator:
             for  s in range(steps):
                 self._step_simulation()

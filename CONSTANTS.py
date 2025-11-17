@@ -8,7 +8,7 @@ LR = 0.0003
 DEVICE = 'cpu'
 NUM_EPISODES = 10000
 
-VIS = True
+VIS = False
 SIMULATION_STEP_DELAY = 1 / 240.
 
 C = 4
