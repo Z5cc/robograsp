@@ -3,7 +3,8 @@ from pathlib import Path
 import pybullet_data
 import random
 
-from assets.utilities import random_quaternion
+from assets.util import random_quaternion
+from CONSTANTS import LL_T, UL_T
 
 
 class Obj:
@@ -29,4 +30,8 @@ class Obj:
         path = root / index_string / f"{index_string}.urdf"
         path = str(path)
         self.id = p.loadURDF(path,self.pos,self.orn)
+
+    def is_in_boundaries(self):
+        x, y, _ = p.getBasePositionAndOrientation(self.id)[0]
+        return LL_T[0] < x < UL_T[0] and LL_T[1] < y < UL_T[1]
     

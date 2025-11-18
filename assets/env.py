@@ -50,12 +50,12 @@ class Env(gym.Env):
         info = {}
         self.steps += 1
         truncated = self.steps >= self.max_steps
-        terminated = (self.reward_handler.successfull_grasp()==True)  or (self.robot.obj_is_in_boundaries(self.obj.id)==False)
+        terminated = (self.reward_handler.successfull_grasp()==True)  or (self.obj.is_in_boundaries()==False)
         return obs, reward, terminated, truncated, info
     
     def step_user_control(self, delta, gr_delta):
         self.robot.move_gripper(gr_delta)
-        self.robot.move_tcp(delta, delta_mode=True)
+        self.robot.move_tcp_delta(delta)
         for _ in range(30):
             self.step_simulation()
         return self._get_obs()

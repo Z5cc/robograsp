@@ -1,11 +1,11 @@
 import pybullet as p
 import numpy as np
-import quaternion
 import random
 from scipy.spatial.transform import Rotation as R
 
+from CONSTANTS import CONE_CENTER, NUMERIC_DAMPING, BASE_POS, BASE_ORN, TCP_UP
+from assets.util import target_from_delta_to_world, target_from_world_to_tcp
 from assets.gripper import Gripper
-
 
 
 class Joint():
@@ -16,28 +16,16 @@ class Joint():
         self.max_force = max_force
         self.max_vel = max_vel
         self.controllable = controllable
-        self.NUMERIC_DAMPING = 0.00001
-
 
 
 class Robot:
 
-    def __init__(self, TCP_TARGET=None):
-        self.random = TCP_TARGET is None
-        self.BASE_POS = (0,0.5,0)
-        self.BASE_ORN = p.getQuaternionFromEuler((0,0,0))
-        self.LL_T = [-0.15,-0.15,0.03] # x,y,z
-        self.UL_T = [0.15,0.15,0.20]
-        self.TCP_CENTER = np.array([0,0.05,0.20]) # center for starting position of tcp
-        self.TCP_TARGET = TCP_TARGET
-        self.TCP_UP = np.array([0,-1,0])
-        self.CONE_TAR = np.array([0,0,0]) # target position for the restriction cone
-        self.CONE_PHI = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
-
+    def __init__(self, tcp_target=None):
+        self.random = tcp_target is None
+        self.tcp_target = tcp_target
 
     def load(self):
-        # LOADING
-        self.id = p.loadURDF('./assets/urdf/ur5_robotiq_85.urdf', self.BASE_POS, self.BASE_ORN,
+        self.id = p.loadURDF('./ur5_robotiq_85/urdf/ur5_robotiq_85.urdf', BASE_POS, BASE_ORN,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.arm_num_dofs = 6
         self.arm_rest_poses = [-1.8427108144422384,-1.783986598255091,1.9232743283452045,-1.9004039537122694,-1.5180998101236258,-0.2668835598602039]
@@ -67,7 +55,7 @@ class Robot:
             max_vel = info[11]
             controllable = (joint_type != p.JOINT_FIXED)
             joint = Joint(index,joint_type,max_force,max_vel,controllable)
-            self.joints_dampings.append(joint.NUMERIC_DAMPING)
+            self.joints_dampings.append(NUMERIC_DAMPING)
 
             self.link_map[link_name] = index
             self.joint_map[joint_name] = index
@@ -84,50 +72,96 @@ class Robot:
         self.id_tcp_link = self.link_map['tcp_link']
         self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
 
-    def move_tcp(self, target, delta_mode=False):
-        if delta_mode:
-            target = self.delta_to_absolute(target)
-        pos = target[0:3]
-        orn = target[3:7]
-        joint_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, pos, orn, jointDamping=self.joints_dampings)
+    def reset(self, obj_pos=None):
+        dev = 0.04
+        if self.random:
+            tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
+            tcp_center = CONE_CENTER+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
+        else:
+            tcp_tar = self.tcp_target
+            tcp_center = CONE_CENTER
+        tcp_vec = tcp_tar - tcp_center
+        tcp_vec = tcp_vec / np.linalg.norm(tcp_vec)
+        z_new = TCP_UP - np.dot(TCP_UP,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
+        z_new = z_new / np.linalg.norm(z_new)
+        y_new = np.cross(z_new,tcp_vec)
+        y_new = y_new / np.linalg.norm(y_new)
+        R_new = np.column_stack((tcp_vec,y_new,z_new))
+        R_new = R.from_matrix(R_new)
+
+        orn = R_new.as_quat().tolist()
+
+        # 1. deactivate motors first to avoid driving back to old position after p.resetJointState
+        for joint_id in self.joints_controllable_arm_ids:
+            p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
+        # 2. p.resetJointState to precalculated arm positions.
+        # this intermediate fixed positions are needed, so that in next step no undesired positions are returned by InverseKinematics
+        for rest_pose, joint_id in zip(self.arm_rest_poses, self.joints_controllable_arm_ids):
+            p.resetJointState(self.id, joint_id, rest_pose)
+        # 3. p.resetJointState to new calculated arm positions
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, CONE_CENTER, orn, jointDamping=self.joints_dampings)
+        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
+            p.resetJointState(self.id, joint_id, rest_pose)
+        # 4. drive motors to reseted joint states to hold new position
+        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
+            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, rest_pose,
+                            force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)        
+        self.gripper.reset() # drive gripper to default open position
+        # 5. let world settle -> done in env, because besides robot obj also needs to settle
+
+    def get_gripper_range(self):
+        return self.gripper.gripper_range
+    
+    def get_t_r(self):
+        t, r, *_ = p.getLinkState(self.id, self.id_tcp_link)
+        return t, r # translation t (x,y,z) and quaternion r (x,y,z,w)
+
+
+    # FUNCTIONS FOR MOVING TCP AND GRIPPER
+    def move_tcp_delta(self, delta):
+        t, r = self.get_t_r()
+        t, r = target_from_delta_to_world(t, r, delta)
+        self.move_tcp_abs(t, r)
+
+    def move_tcp_abs(self, t, r):            
+        joint_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, t, r, jointDamping=self.joints_dampings)
         # arm
         for joint_pose, joint_id in zip(joint_poses, self.joints_controllable_arm_ids):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_pose,
                                     force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)
             
+    def open_gripper(self):
+        self.gripper.open()
 
-
+    def close_gripper(self):
+        self.gripper.close()
+            
+    def move_gripper(self, open_length):
+        self.gripper.move(open_length)
     
 
-
-
-
-
-
-
-
-
-
-
-
-
+    # FUNCTIONS FOR ACTIONS
+    # ACTION 0
     def grasp(self):
         yield from self.approach()
         liftable = yield from self.close()
         if liftable:
             yield from self.lift()
         else:
-            yield from self.retreat()   
-             
+            yield from self.retreat()
+
+    # ACTION 1 - ...
     def approach(self):
         dx = 0.005
-        delta = [dx,0,0,0,0,0,0]
+        delta = [dx,0,0,0,0,0]
         x_approach_stop = False
         while not (x_approach_stop):
-            x_old = self.get_t_in_tcp_system()[0]
-            self.move_tcp(delta,delta_mode=True)
+            t, r = self.get_t_r()
+            x_old = target_from_world_to_tcp(t,r)[0]
+            self.move_tcp_delta(delta)
             yield 30
-            x = self.get_t_in_tcp_system()[0]
+            t, r = self.get_t_r()
+            x = target_from_world_to_tcp(t,r)[0]
             x_approach_stop = x_old+0.9*dx > x # if x does not reach the goal of x_old+0.9*dx
 
     def close(self):
@@ -146,11 +180,11 @@ class Robot:
         return liftable
 
     def lift(self):
-        pos, orn, *_ = p.getLinkState(self.id, self.id_tcp_link)
-        pos, orn = list(pos), list(orn)
-        while pos[2]<0.2: # lift in z direction
-            pos[2]+=0.01
-            self.move_tcp(pos+orn)
+        t,r = self.get_t_r()
+        t = list(t)
+        while t[2]<0.2: # lift in z direction
+            t[2]+=0.01
+            self.move_tcp_abs(t, r)
             yield 30
             if not self.gripper.has_obj(include_delta=False):
                 yield from self.retreat()
@@ -158,15 +192,16 @@ class Robot:
 
     def retreat(self):
         self.open_gripper()
-        delta = [-0.01,0,0,0,0,0,0]
+        delta = [-0.01,0,0,0,0,0]
         for _ in range(5):
-            self.move_tcp(delta,delta_mode=True)
+            self.move_tcp_delta(delta)
             yield 30
 
     def seek(self,action):
         # default deltas
         dt = 0.015
         dr = 0.05
+        # [dx,dy,dz,droll,dpitch,dyaw]
         delta_lookup = {
             1:  [ dt, 0 , 0 , 0 , 0 , 0 ],
             2:  [-dt, 0 , 0 , 0 , 0 , 0 ],
@@ -183,211 +218,6 @@ class Robot:
         }
         delta = delta_lookup[action]
         # move arm and gripper
-        self.move_tcp(delta, delta_mode=True)
+        self.move_tcp_delta(delta)
         self.open_gripper()
         yield 30
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-    def move_gripper(self, open_length):
-        self.gripper.move(open_length)
-
-    def open_gripper(self):
-        self.gripper.open()
-
-    def close_gripper(self):
-        self.gripper.close()
-
-    def get_gripper_range(self):
-        return self.gripper.gripper_range
-
-
-
-
-
-
-
-
-    def reset(self, obj_pos=None):
-        """
-        reset to rest poses
-        """
-        dev = 0.04
-        if self.random:
-            tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
-            tcp_center = self.TCP_CENTER+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
-        else:
-            tcp_tar = self.TCP_TARGET
-            tcp_center = self.TCP_CENTER
-        tcp_vec = tcp_tar - tcp_center
-        tcp_vec = tcp_vec / np.linalg.norm(tcp_vec)
-        z_new = self.TCP_UP - np.dot(self.TCP_UP,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
-        z_new = z_new / np.linalg.norm(z_new)
-        y_new = np.cross(z_new,tcp_vec)
-        y_new = y_new / np.linalg.norm(y_new)
-        R_new = np.column_stack((tcp_vec,y_new,z_new))
-        R_new = R.from_matrix(R_new)
-
-        orn = R_new.as_quat().tolist()
-
-        # 1. deactivate motors first to avoid driving back to old position after p.resetJointState
-        for joint_id in self.joints_controllable_arm_ids:
-            p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
-
-        # 2. p.resetJointState to precalculated arm positions.
-        # this intermediate fixed positions are needed, so that in next step no undesired positions are returned by InverseKinematics
-        for rest_pose, joint_id in zip(self.arm_rest_poses, self.joints_controllable_arm_ids):
-            p.resetJointState(self.id, joint_id, rest_pose)
-
-        # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, self.TCP_CENTER, orn, jointDamping=self.joints_dampings)
-        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
-            p.resetJointState(self.id, joint_id, rest_pose)
-
-        # 4. drive motors to reseted joint states to hold new position
-        for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
-            p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, rest_pose,
-                            force=self.joints[joint_id].max_force, maxVelocity=self.joints[joint_id].max_vel)
-
-        # drive gripper to default open position
-        self.gripper.reset()
-
-        # 5. let world settle -> done in env, because besides robot obj also needs to settle
-
-
-    def get_joint_obs(self):
-        positions = []
-        velocities = []
-        for joint_id in self.joints_controllable_ids:
-            pos, vel, _, _ = p.getJointState(self.id, joint_id)
-            positions.append(pos)
-            velocities.append(vel)
-        tcp_pos = p.getLinkState(self.id, self.id_tcp_link)[0]
-        return dict(positions=positions, velocities=velocities, tcp_pos=tcp_pos)
-    
-
-
-    def obj_is_in_boundaries(self, id_obj):
-        x, y, _ = p.getBasePositionAndOrientation(id_obj)[0]
-        return self.LL_T[0] < x < self.UL_T[0] and self.LL_T[1] < y < self.UL_T[1]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def delta_to_absolute(self, delta):
-        dt_TCP = np.array(delta[0:3])
-        dr_TCP = np.array(p.getQuaternionFromEuler(delta[3:6])) # one rotation dr_TCP derived from intrinsic euler angles
-
-        # 1. get current tcp pose in world frame
-        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
-        t = np.array(state_TCP[0])  # translation
-        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
-        
-        # 2. translation
-        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        dt = R_TCP_W @ dt_TCP # from local to global world frame
-        t += dt
-
-        # 3. rotation
-        r = np.quaternion(r[3],r[0],r[1],r[2]) # pybullet quaternion: xyzw  numpy quaternion: wxyz
-        dr_TCP = np.quaternion(dr_TCP[3],dr_TCP[0],dr_TCP[1],dr_TCP[2])
-        r = r * dr_TCP # do not need to multiplicate with individual like = r*dr_yaw*dr_pitch*dr_roll, because getQuaternionFromEuler is from intrinsic angles
-        
-        t = t.tolist()
-
-        t = self.clamp_t(t,self.LL_T,self.UL_T)
-        r = self.clamp_r(r,self.TCP_CENTER,self.CONE_TAR,self.CONE_PHI)
-
-        r = [r.x,r.y,r.z,r.w]
-        return t + r
-    
-    def get_t_in_tcp_system(self):
-        """
-        return t, but in the tcp coordinate system with the axis according to current tcp orientation
-        """
-        state_TCP = p.getLinkState(self.id, self.id_tcp_link)
-        t = np.array(state_TCP[0])  # translation
-        r = np.array(state_TCP[1])  # quaternion (x,y,z,w)
-
-        R_TCP_W = np.array(p.getMatrixFromQuaternion(r)).reshape(3, 3)
-        R_W_TCP = np.transpose(R_TCP_W)
-        t = R_W_TCP @ t
-        return t
-
-
-
-    def clamp_t(self,t,ll_t,ul_t):
-        t = [max(l, min(x, u)) for x, l, u in zip(t, ll_t, ul_t)]
-        return t
-
-    def clamp_r(self,r,tcp_center,CONE_TAR,CONE_PHI):
-        # caclulate cone_vec: cone_vec is the center vector for the restriction cone regarding CONE_PHI
-        cone_vec = CONE_TAR - tcp_center
-        cone_vec = cone_vec / np.linalg.norm(cone_vec)
-        # calculate alpha
-        x_e = np.array([1,0,0])
-        q_e = np.quaternion(0,*x_e) # w,x,y,z
-        q_t = r*q_e*r.conj()
-        x_t = np.array([q_t.x,q_t.y,q_t.z])
-        x_t = x_t / np.linalg.norm(x_t)
-        alpha = np.arccos(np.dot(cone_vec, x_t))
-
-        if alpha>CONE_PHI:
-            # calculate n
-            n = np.cross(x_t,cone_vec)
-            n = n/np.linalg.norm(n)
-            n_x, n_y, n_z = n[0], n[1], n[2]
-            alpha_b = alpha - CONE_PHI
-            sin_half = np.sin(alpha_b/2)
-            cos_half = np.cos(alpha_b/2)
-            r_back = np.quaternion(cos_half, sin_half*n_x, sin_half*n_y, sin_half*n_z)
-            r = r_back*r
-            return r
-        
-        return r

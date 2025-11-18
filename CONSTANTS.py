@@ -1,3 +1,7 @@
+import numpy as np
+import pybullet as p
+
+
 BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9 # EPS_START is the starting value of epsilon
@@ -15,3 +19,13 @@ C = 4
 H = 16
 W = 16
 N_ACTIONS = 7
+
+BASE_POS = (0,0.5,0) # robot base position
+BASE_ORN = p.getQuaternionFromEuler((0,0,0)) # robot base orientation
+TCP_UP = np.array([0,-1,0]) # up vector for tcp
+CONE_CENTER = np.array([0,0.05,0.20]) # also center for starting position of tcp
+CONE_TAR = np.array([0,0,0]) # target position for the restriction cone
+CONE_PHI = (np.pi/180)*35 # cone_phi limits alpha for the restriction cone around x_c
+LL_T = [-0.15,-0.15,0.03] # lower limit of translation x,y,z
+UL_T = [0.15,0.15,0.20] # upper limit of translation x,y,z
+NUMERIC_DAMPING = 0.00001 # numeric damping damping value for inverse kinematis (no physical value)
