@@ -5,7 +5,7 @@ import gymnasium as gym
 import time
 from typing import Optional
 
-from CONSTANTS import *
+from CONSTANTS import VIS, REALTIME, SIMULATION_STEP_DELAY, N_ACTIONS, H, W
 from assets.rewardhandler import RewardHandler
 from assets.camera import Camera
 

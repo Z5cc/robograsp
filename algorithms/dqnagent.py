@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from CONSTANTS import *
+from CONSTANTS import BATCH_SIZE, GAMMA, EPS_START, EPS_END, EPS_DECAY, TAU, LR, DEVICE, N_ACTIONS
 
 
 class Network(nn.Module):
