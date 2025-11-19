@@ -57,7 +57,7 @@ class Env(gym.Env):
         self.robot.move_gripper(gr_delta)
         self.robot.move_tcp_delta(delta)
         for _ in range(30):
-            self.step_simulation()
+            self._step_simulation()
         return self._get_obs()
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -80,9 +80,8 @@ class Env(gym.Env):
 
     def _step_simulation(self):
         p.stepSimulation()
-        if VIS:
-            pass
-            # time.sleep(SIMULATION_STEP_DELAY)    
+        if VIS and REALTIME:
+            time.sleep(SIMULATION_STEP_DELAY)    
 
     def _get_obs(self):
         return self.camera.shot()

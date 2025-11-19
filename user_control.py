@@ -20,9 +20,9 @@ def read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_i
 
 env = Env(Robot(),Obj())
 # custom sliders to tune parameters (name of the parameter,range,initial value)
-dx_in = p.addUserDebugParameter("dx", -0.001, 0.001, 0)
-dy_in = p.addUserDebugParameter("dy", -0.001, 0.001, 0)
-dz_in = p.addUserDebugParameter("dz", -0.001, 0.001, 0)
+dx_in = p.addUserDebugParameter("dx", -0.01, 0.01, 0)
+dy_in = p.addUserDebugParameter("dy", -0.01, 0.01, 0)
+dz_in = p.addUserDebugParameter("dz", -0.01, 0.01, 0)
 droll_in = p.addUserDebugParameter("droll", -0.5, 0.5, 0)
 dpitch_in = p.addUserDebugParameter("dpitch", -0.5, 0.5, 0)
 dyaw_in = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
@@ -31,7 +31,7 @@ gr_in = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 while True:
     debug_parameter = read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_in)
     delta, gr_delta = debug_parameter[0:6], debug_parameter[-1]
-    obs = env.step_demo(delta,gr_delta)
+    obs = env.step_user_control(delta,gr_delta)
     # lo, hi = p.getAABB(obj.id)
     # print(f'lo:{lo}')
     # print(f'hi:{hi}')
