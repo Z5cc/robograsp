@@ -26,7 +26,7 @@ def plot_durations(episode_durations):
     plt.pause(0.001)
 
 
-env = Env(Robot(),Obj())
+env = Env()
 agent = DQNAgent()
 memory = ReplayMemory(10000)
 state_handler = StateHandler()

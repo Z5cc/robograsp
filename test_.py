@@ -3,22 +3,23 @@ import numpy as np
 import torch
 import time
 
+from CONSTANTS import CONE_CENTER
 from assets.robot import Robot
 from assets.obj import Obj
 from assets.env import Env
 
 
 def test_action_grasp():
-    robot = Robot(tcp_target=(0,0,0))
-    obj = Obj(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
-    env = Env(robot,obj)
+    env = Env()
+    env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
+                          obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
     env.step(0) # action 0 is robot.grasp()
     assert env.reward_handler.successfull_grasp()
 
 def test_reward():
-    robot = Robot(tcp_target=(0,0,0))
-    obj = Obj(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
-    env = Env(robot,obj)
+    env = Env()
+    env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
+                          obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
     offset = env.reward_handler.ray_offset()
     print(f'offset::::::::{offset}')
     time.sleep(10)

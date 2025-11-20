@@ -20,11 +20,7 @@ class Joint():
 
 class Robot:
 
-    def __init__(self, tcp_target=None):
-        self.random = tcp_target is None
-        self.tcp_target = tcp_target
-
-    def load(self):
+    def __init__(self):
         self.id = p.loadURDF('./ur5_robotiq_85/urdf/ur5_robotiq_85.urdf', BASE_POS, BASE_ORN,
                                 useFixedBase=True, flags=p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES)
         self.arm_num_dofs = 6
@@ -72,15 +68,8 @@ class Robot:
         self.id_tcp_link = self.link_map['tcp_link']
         self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
 
-    def reset(self, obj_pos=None):
-        dev = 0.04
-        if self.random:
-            tcp_tar = obj_pos+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),0])
-            tcp_center = CONE_CENTER+np.array([random.uniform(-dev,dev),random.uniform(-dev,dev),random.uniform(-dev,dev)])
-        else:
-            tcp_tar = self.tcp_target
-            tcp_center = CONE_CENTER
-        tcp_vec = tcp_tar - tcp_center
+    def reset(self, tcp_center, tcp_target):
+        tcp_vec = tcp_target - tcp_center
         tcp_vec = tcp_vec / np.linalg.norm(tcp_vec)
         z_new = TCP_UP - np.dot(TCP_UP,tcp_vec)*tcp_vec  # z_new = up - proj. of up on tcp_vec
         z_new = z_new / np.linalg.norm(z_new)
@@ -99,7 +88,7 @@ class Robot:
         for rest_pose, joint_id in zip(self.arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
         # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, CONE_CENTER, orn, jointDamping=self.joints_dampings)
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, tcp_center, orn, jointDamping=self.joints_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
         # 4. drive motors to reseted joint states to hold new position

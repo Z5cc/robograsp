@@ -1,6 +1,7 @@
 import pybullet as p
 import time
 
+from CONSTANTS import CONE_CENTER
 from assets.robot import Robot
 from assets.obj import Obj
 from assets.env import Env
@@ -18,14 +19,16 @@ def read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_i
     return dx, dy, dz, droll, dpitch, dyaw, gr
 
 
-env = Env(Robot(),Obj())
+env = Env()
+env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
+                      obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
 # custom sliders to tune parameters (name of the parameter,range,initial value)
 dx_in = p.addUserDebugParameter("dx", -0.01, 0.01, 0)
 dy_in = p.addUserDebugParameter("dy", -0.01, 0.01, 0)
 dz_in = p.addUserDebugParameter("dz", -0.01, 0.01, 0)
-droll_in = p.addUserDebugParameter("droll", -0.5, 0.5, 0)
-dpitch_in = p.addUserDebugParameter("dpitch", -0.5, 0.5, 0)
-dyaw_in = p.addUserDebugParameter("dyaw", -0.5, 0.5, 0)
+droll_in = p.addUserDebugParameter("droll", -0.2, 0.2, 0)
+dpitch_in = p.addUserDebugParameter("dpitch", -0.2, 0.2, 0)
+dyaw_in = p.addUserDebugParameter("dyaw", -0.2, 0.2, 0)
 gr_in = p.addUserDebugParameter("gripper_opening_length", 0, 0.085, 0.04)
 
 while True:

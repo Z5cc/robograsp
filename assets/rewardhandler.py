@@ -6,15 +6,15 @@ from CONSTANTS import GAMMA
 
 class RewardHandler:
 
-    def __init__(self, id_robot, id_base_link, id_tcp_link, id_obj, gripper_range):
+    def __init__(self, id_robot, id_base_link, id_tcp_link, gripper_range):
         self.id_robot = id_robot
         self.id_base_link = id_base_link
         self.id_tcp_link = id_tcp_link
-        self.id_obj = id_obj
         self.gripper_range = gripper_range
         self.potential = 0
 
-    def reset(self):
+    def reset(self, id_obj):
+        self.id_obj = id_obj
         self.potential = self.get_potential()
 
 
