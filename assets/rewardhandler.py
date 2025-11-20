@@ -30,7 +30,7 @@ class RewardHandler:
             return 100
         else:
             # penalty for frequent grasping or penalty for failed grasping
-            # r = 1000*self.ray_offset()
+            # r = -1000*self.ray_offset()
             return 0
 
 

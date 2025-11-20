@@ -1,6 +1,7 @@
 import pybullet as p
 import numpy as np
 import torch
+import time
 
 from assets.robot import Robot
 from assets.obj import Obj
@@ -11,11 +12,18 @@ def test_action_grasp():
     robot = Robot(tcp_target=(0,0,0))
     obj = Obj(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
     env = Env(robot,obj)
-    env.step(0)
+    env.step(0) # action 0 is robot.grasp()
     assert env.reward_handler.successfull_grasp()
 
-def test_robot():
-    pass
+def test_reward():
+    robot = Robot(tcp_target=(0,0,0))
+    obj = Obj(pos=(0,0,0),orn=p.getQuaternionFromEuler((0,0,0)),index=1)
+    env = Env(robot,obj)
+    offset = env.reward_handler.ray_offset()
+    print(f'offset::::::::{offset}')
+    time.sleep(10)
+    assert offset > 0.01
+
 # def test_update_state():
 #     obs = np.array([[2,3],[2,4]])
 #     state = torch.tensor([[[1,1],[1,1]],[[2,2],[2,2]],[[3,3],[3,3]],[[4,4],[4,4]]])
