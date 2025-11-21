@@ -9,14 +9,13 @@ class Camera:
     near = 0.01 # 0.1 means anything closer than 10 cm is invisible
     far = 0.6 # anything further than this is also default fovdefault fov invisible
     """
-    def __init__(self, id_robot, id_lens_link):
-        self.id_robot = id_robot
-        self.id_lens_link = id_lens_link
+    def __init__(self, robot):
         self.NEAR, self.FAR = 0.01, 5
         self.FOV = 50
+        self.robot = robot
 
     def shot(self):
-        cam_pos, cam_orn, *_ = p.getLinkState(self.id_robot, self.id_lens_link)
+        cam_pos, cam_orn, *_ = self.robot.get_link_pos('lens_link')
         rot_matrix = np.array(p.getMatrixFromQuaternion(cam_orn)).reshape(3, 3)
         forward = rot_matrix[:, 0]
         up = rot_matrix[:, 2]

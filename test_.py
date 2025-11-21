@@ -16,14 +16,14 @@ def test_action_grasp():
     env.step(0) # action 0 is robot.grasp()
     assert env.reward_handler.successfull_grasp()
 
-def test_reward():
+def test_ray_offset():
     env = Env()
     env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
                           obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
-    offset = env.reward_handler.ray_offset()
+    offset = env.reward_handler.ray_tests()
     print(f'offset::::::::{offset}')
     time.sleep(10)
-    assert offset > 0.01
+    assert offset < 0.001
 
 # def test_update_state():
 #     obs = np.array([[2,3],[2,4]])

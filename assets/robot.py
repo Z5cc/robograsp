@@ -65,7 +65,6 @@ class Robot:
         for joint_id in self.joints_controllable_ids:
             p.setJointMotorControl2(self.id, joint_id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
         
-        self.id_tcp_link = self.link_map['tcp_link']
         self.gripper = Gripper(self.id, self.link_map ,self.joint_map, self.joints)
 
     def reset(self, tcp_center, tcp_target):
@@ -88,7 +87,7 @@ class Robot:
         for rest_pose, joint_id in zip(self.arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
         # 3. p.resetJointState to new calculated arm positions
-        arm_rest_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, tcp_center, orn, jointDamping=self.joints_dampings)
+        arm_rest_poses = p.calculateInverseKinematics(self.id, self.link_map['tcp_link'], tcp_center, orn, jointDamping=self.joints_dampings)
         for rest_pose, joint_id in zip(arm_rest_poses, self.joints_controllable_arm_ids):
             p.resetJointState(self.id, joint_id, rest_pose)
         # 4. drive motors to reseted joint states to hold new position
@@ -101,19 +100,20 @@ class Robot:
     def get_gripper_range(self):
         return self.gripper.gripper_range
     
-    def get_t_r(self):
-        t, r, *_ = p.getLinkState(self.id, self.id_tcp_link)
-        return t, r # translation t (x,y,z) and quaternion r (x,y,z,w)
+    def get_link_pos(self, link):
+        link_id = self.link_map[link]
+        pos, orn, *_ = p.getLinkState(self.id, link_id)
+        return pos, orn # translation t (x,y,z) and quaternion r (x,y,z,w)
 
 
     # FUNCTIONS FOR MOVING TCP AND GRIPPER
     def move_tcp_delta(self, delta):
-        t, r = self.get_t_r()
+        t, r = self.get_link_pos('tcp_link')
         t, r = target_from_delta_to_world(t, r, delta)
         self.move_tcp_abs(t, r)
 
     def move_tcp_abs(self, t, r):            
-        joint_poses = p.calculateInverseKinematics(self.id, self.id_tcp_link, t, r, jointDamping=self.joints_dampings)
+        joint_poses = p.calculateInverseKinematics(self.id, self.link_map['tcp_link'], t, r, jointDamping=self.joints_dampings)
         # arm
         for joint_pose, joint_id in zip(joint_poses, self.joints_controllable_arm_ids):
             p.setJointMotorControl2(self.id, joint_id, p.POSITION_CONTROL, joint_pose,
@@ -145,11 +145,11 @@ class Robot:
         delta = [dx,0,0,0,0,0]
         x_approach_stop = False
         while not (x_approach_stop):
-            t, r = self.get_t_r()
+            t, r = self.get_link_pos('tcp_link')
             x_old = target_from_world_to_tcp(t,r)[0]
             self.move_tcp_delta(delta)
             yield 30
-            t, r = self.get_t_r()
+            t, r = self.get_link_pos('tcp_link')
             x = target_from_world_to_tcp(t,r)[0]
             x_approach_stop = x_old+0.9*dx > x # if x does not reach the goal of x_old+0.9*dx
 
@@ -169,7 +169,7 @@ class Robot:
         return liftable
 
     def lift(self):
-        t,r = self.get_t_r()
+        t,r = self.get_link_pos('tcp_link')
         t = list(t)
         while t[2]<0.2: # lift in z direction
             t[2]+=0.01

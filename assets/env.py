@@ -26,8 +26,8 @@ class Env(gym.Env):
         self.planeID = p.loadURDF("plane.urdf")
         self.robot = Robot()
         self.obj = Obj()
-        self.camera = Camera(self.robot.id, self.robot.link_map['lens_link'])
-        self.reward_handler = RewardHandler(self.robot.id, self.robot.link_map['base_link'], self.robot.link_map['tcp_link'], self.robot.get_gripper_range())
+        self.camera = Camera(self.robot)
+        self.reward_handler = RewardHandler(self.robot, self.obj)
         # based on load
         self.action_space = gym.spaces.Discrete(N_ACTIONS)
         self.observation_space = gym.spaces.Box(low=self.camera.NEAR, high=self.camera.FAR, shape=(H,W), dtype=np.float32)
@@ -78,9 +78,9 @@ class Env(gym.Env):
 
     def reset_with_params(self, obj_pos, obj_orn, obj_index, tcp_center, tcp_target):
         
-        id_obj = self.obj.reset(obj_pos, obj_orn, obj_index)
+        self.obj.reset(obj_pos, obj_orn, obj_index)
         self.robot.reset(tcp_center, tcp_target)
-        self.reward_handler.reset(id_obj)
+        self.reward_handler.reset()
         for _ in range(30):
             self._step_simulation()
         obs = self._get_obs()

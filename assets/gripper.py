@@ -9,7 +9,6 @@ class Gripper():
         self.link_map = link_map
         self.joint_map = joint_map
         self.joints = joints
-        self.id_base_link = link_map['robotiq_arg2f_base_link']
         self.joints = joints
         self.gripper_range = [0, 0.085 if max_open>0.085 else max_open]
 

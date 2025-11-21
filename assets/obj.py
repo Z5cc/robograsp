@@ -24,3 +24,11 @@ class Obj:
     def is_in_boundaries(self):
         x, y, _ = p.getBasePositionAndOrientation(self.id)[0]
         return LL_T[0] < x < UL_T[0] and LL_T[1] < y < UL_T[1]
+
+    def get_pos(self):
+        pos, orn = p.getBasePositionAndOrientation(self.id)
+        return pos, orn
+
+    def get_AABB(self):
+        lo, hi = p.getAABB(self.id)
+        return lo, hi

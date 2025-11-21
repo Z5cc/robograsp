@@ -6,15 +6,12 @@ from CONSTANTS import GAMMA
 
 class RewardHandler:
 
-    def __init__(self, id_robot, id_base_link, id_tcp_link, gripper_range):
-        self.id_robot = id_robot
-        self.id_base_link = id_base_link
-        self.id_tcp_link = id_tcp_link
-        self.gripper_range = gripper_range
+    def __init__(self, robot, obj):
+        self.robot = robot
+        self.obj = obj
         self.potential = 0
 
-    def reset(self, id_obj):
-        self.id_obj = id_obj
+    def reset(self):
         self.potential = self.get_potential()
 
 
@@ -36,16 +33,32 @@ class RewardHandler:
 
     # DIFFERENT WAYS TO CALCULATE POTENTIAL
     def successfull_grasp(self):
-        lo, hi = p.getAABB(self.id_obj)
+        lo, hi = self.obj.get_AABB()
         lowest_point_z = lo[2]
         return lowest_point_z>0.005
+    
+    def ray_offset(self, vis=False):
+        # get obj position
+        obj_pos, obj_orn = self.obj.get_pos()
 
-    def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07):
+        # get straight
+        gr_pos, gr_orn, *_ = self.robot.get_link_pos('robotiq_arg2f_base_link')
+        rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
+        gr_forw = rot_matrix[:,0]
+
+        obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
+        cross = np.cross(gr_forw, obj_pos-gr_pos)
+        offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
+        # print(f'offset:{offset}')
+        return offset
+
+    def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07, vis=False):
         outer_froms, inner_froms = self._get_froms(ray_start)
         outer_tos = self._get_tos(outer_froms, ray_length)
         inner_tos = self._get_tos(inner_froms,ray_length)
-        # self._draw_debug_lines(outer_froms,outer_tos)
-        # self._draw_debug_lines(inner_froms,inner_tos)
+        if vis is True:
+            self._draw_debug_lines(outer_froms,outer_tos)
+            self._draw_debug_lines(inner_froms,inner_tos)
 
         outer_hits = self._get_hits(outer_froms,outer_tos)
         inner_hits = self._get_hits(inner_froms,inner_tos)
@@ -58,24 +71,17 @@ class RewardHandler:
 
         d = max(min(outer_shortest_hit, inner_shortest_hit)-graspable_reach,0)
         return obj_hit, d, delta, graspable
-    
-    def ray_offset(self):
-        # get obj position
-        obj_pos, obj_orn = p.getBasePositionAndOrientation(self.id_obj)
-
-        # get straight
-        gr_pos, gr_orn, *_ = p.getLinkState(self.id_robot,self.id_tcp_link)
-        rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
-        gr_forw = rot_matrix[:,0]
-
-        obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
-        cross = np.cross(gr_forw, obj_pos-gr_pos)
-        offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
-        # print(f'offset:{offset}')
-        return offset
 
 
     # HELPER FOR POTENTIAL CALCULATION
+    # def _draw_debug_line_tcp(self):
+    #     f = p.getLinkState
+    #     p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5)
+        
+    # def _draw_debug_point_obj(self, ):
+    #     pass
+    #     # p.addUserDebugPoints()
+
     def _draw_debug_lines(self, froms, tos, visible=True):
         if visible:
             for f, to in zip(froms, tos):
@@ -107,7 +113,7 @@ class RewardHandler:
         return outer_froms, inner_froms
     
     def _get_tos(self,froms, ray_length):
-        pos, orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
+        pos, orn, *_ = self.robot.get_link_pos('robotiq_arg2f_base_link')
         rot_matrix = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
         forward = rot_matrix[:, 2]
         tos = [f + forward*ray_length for f in froms]
@@ -127,7 +133,7 @@ class RewardHandler:
 
     # HELPER FOR HELPER
     def _local_to_global(self, pt_local):
-        pos, orn, *_ = p.getLinkState(self.id_robot,self.id_base_link)
+        pos, orn, *_ = self.robot.get_link_pos('robotiq_arg2f_base_link')
         pt_world, _ = p.multiplyTransforms(pos, orn, pt_local, (0,0,0,1))
         return pt_world
 
