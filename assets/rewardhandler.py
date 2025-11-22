@@ -12,14 +12,16 @@ class RewardHandler:
         self.potential = 0
         self.offset_line_id = None
         self.point_id = None
+        self.vis = False
 
 
     def reset(self):
         self.potential = self.get_potential()
-        p.removeUserDebugItem(self.offset_line_id)
-        p.removeUserDebugItem(self.point_id)
-        self.offset_line_id = None
-        self.point_id = None
+        if self.vis is True:
+            p.removeUserDebugItem(self.offset_line_id)
+            p.removeUserDebugItem(self.point_id)
+            self.offset_line_id = None
+            self.point_id = None
 
 
     # RETURN REWARD
@@ -44,7 +46,7 @@ class RewardHandler:
         lowest_point_z = lo[2]
         return lowest_point_z>0.005
     
-    def ray_offset(self, vis=True):
+    def ray_offset(self):
         # get obj position
         obj_pos, obj_orn = self.obj.get_pos()
 
@@ -52,7 +54,7 @@ class RewardHandler:
         gr_pos, gr_orn, *_ = self.robot.get_link_pos('robotiq_arg2f_base_link')
         rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
         gr_forw = rot_matrix[:,2]
-        if vis is True:
+        if self.vis is True:
             self._draw_debug_line(gr_pos, gr_pos+gr_forw)
             self._draw_point(obj_pos)
 
@@ -61,11 +63,11 @@ class RewardHandler:
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
         return offset
 
-    def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07, vis=False):
+    def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07):
         outer_froms, inner_froms = self._get_froms(ray_start)
         outer_tos = self._get_tos(outer_froms,ray_length)
         inner_tos = self._get_tos(inner_froms,ray_length)
-        if vis is True:
+        if self.vis is True:
             for f, to in zip(outer_froms, outer_tos):
                 self._draw_debug_line(f,to)
             for f, to in zip(inner_froms, inner_tos):
