@@ -10,9 +10,16 @@ class RewardHandler:
         self.robot = robot
         self.obj = obj
         self.potential = 0
+        self.offset_line_id = None
+        self.point_id = None
+
 
     def reset(self):
         self.potential = self.get_potential()
+        p.removeUserDebugItem(self.offset_line_id)
+        p.removeUserDebugItem(self.point_id)
+        self.offset_line_id = None
+        self.point_id = None
 
 
     # RETURN REWARD
@@ -27,8 +34,8 @@ class RewardHandler:
             return 100
         else:
             # penalty for frequent grasping or penalty for failed grasping
-            # r = -1000*self.ray_offset()
-            return 0
+            r = -1000*self.ray_offset()
+            return r
 
 
     # DIFFERENT WAYS TO CALCULATE POTENTIAL
@@ -37,28 +44,32 @@ class RewardHandler:
         lowest_point_z = lo[2]
         return lowest_point_z>0.005
     
-    def ray_offset(self, vis=False):
+    def ray_offset(self, vis=True):
         # get obj position
         obj_pos, obj_orn = self.obj.get_pos()
 
         # get straight
         gr_pos, gr_orn, *_ = self.robot.get_link_pos('robotiq_arg2f_base_link')
         rot_matrix = np.array(p.getMatrixFromQuaternion(gr_orn)).reshape(3, 3)
-        gr_forw = rot_matrix[:,0]
+        gr_forw = rot_matrix[:,2]
+        if vis is True:
+            self._draw_debug_line(gr_pos, gr_pos+gr_forw)
+            self._draw_point(obj_pos)
 
         obj_pos, gr_pos, gr_forw = map(np.array,(obj_pos, gr_pos, gr_forw))
         cross = np.cross(gr_forw, obj_pos-gr_pos)
         offset = float(np.linalg.norm(cross)/np.linalg.norm(gr_forw))
-        # print(f'offset:{offset}')
         return offset
 
     def ray_tests(self, ray_start=0.06, ray_length=0.5, graspable_reach=0.07, vis=False):
         outer_froms, inner_froms = self._get_froms(ray_start)
-        outer_tos = self._get_tos(outer_froms, ray_length)
+        outer_tos = self._get_tos(outer_froms,ray_length)
         inner_tos = self._get_tos(inner_froms,ray_length)
         if vis is True:
-            self._draw_debug_lines(outer_froms,outer_tos)
-            self._draw_debug_lines(inner_froms,inner_tos)
+            for f, to in zip(outer_froms, outer_tos):
+                self._draw_debug_line(f,to)
+            for f, to in zip(inner_froms, inner_tos):
+                self._draw_debug_line(f,to)
 
         outer_hits = self._get_hits(outer_froms,outer_tos)
         inner_hits = self._get_hits(inner_froms,inner_tos)
@@ -82,15 +93,22 @@ class RewardHandler:
     #     pass
     #     # p.addUserDebugPoints()
 
-    def _draw_debug_lines(self, froms, tos, visible=True):
-        if visible:
-            for f, to in zip(froms, tos):
-                p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5)
+    def _draw_debug_line(self, f, to):
+        if self.offset_line_id is None:
+            self.offset_line_id = p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5)
+        else:
+            p.addUserDebugLine(f, to, [0,1,0], lineWidth=1.5, replaceItemUniqueId=self.offset_line_id)
+
+    def _draw_point(self, pos):
+        if self.point_id is None:
+            self.point_id = p.addUserDebugPoints([pos], [[1,0,0]], pointSize=6)
+        else:
+            p.addUserDebugPoints([pos], [[1,0,0]], pointSize=8, replaceItemUniqueId=self.point_id)
                 
     def _get_froms(self, ray_start):
         a = ray_start
         h = 0.011
-        w = self.gripper_range[1]/2
+        w = self.robot.get_gripper_range()[1]/2
         iw = w-0.002
         ih = h-0.001
         ow = w-0.001
@@ -125,7 +143,7 @@ class RewardHandler:
 
     def _get_shortest_hit(self, hits, ray_length):
         absolute_fractions = (
-            hit[2] * ray_length if hit[0] == self.id_obj else ray_length
+            hit[2] * ray_length if hit[0] == self.obj.id else ray_length
             for hit in hits
         )
         return min(absolute_fractions)

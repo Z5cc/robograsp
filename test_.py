@@ -18,15 +18,18 @@ def test_action_grasp():
 
 def test_ray_offset():
     env = Env()
-    env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
+    env.reset_with_params(tcp_center=np.array([0,0.05,0.20]),tcp_target=(0,0.05,0),
                           obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
-    offset = env.reward_handler.ray_tests()
-    print(f'offset::::::::{offset}')
-    time.sleep(10)
-    assert offset < 0.001
+    offset = env.reward_handler.ray_offset()
+    # print(f'offset: {offset}')
+    assert 0.04 < offset < 0.06
 
-# def test_update_state():
-#     obs = np.array([[2,3],[2,4]])
-#     state = torch.tensor([[[1,1],[1,1]],[[2,2],[2,2]],[[3,3],[3,3]],[[4,4],[4,4]]])
-#     new_state = train.update_state(state,obs)
-#     assert new_state == torch.tensor([[[2,2],[2,2]],[[3,3],[3,3]],[[4,4],[4,4]],[[2,3],[2,4]]])
+def test_ray_reward():
+    env = Env()
+    env.reset_with_params(tcp_center=np.array([0,0.05,0.20]),tcp_target=(0,0.05,0),
+                          obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
+    potential_before_step = env.reward_handler.potential
+    obs, reward, terminated, truncated, info = env.step(5) # moving in dz local is dy in world
+    potential_after_step = env.reward_handler.potential
+    # print(f'potential_before_step: {potential_before_step} potential_after_step: {potential_after_step} reward: {reward}')
+    assert potential_after_step > potential_before_step

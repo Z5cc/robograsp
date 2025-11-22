@@ -47,6 +47,7 @@ class Env(gym.Env):
 
         obs = self._get_obs()
         reward = self._get_reward()
+        
         info = {}
         self.steps += 1
         truncated = self.steps >= self.max_steps
