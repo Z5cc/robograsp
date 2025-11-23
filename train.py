@@ -41,7 +41,6 @@ for i_episode  in range(NUM_EPISODES):
         # 1.1 run environment
         action = agent.select_action(state)
         obs, reward, terminated, truncated, info = env.step(action.item())
-        print(f'reward: {reward}')
         # 1.2 process results from run and put into memory
         done = terminated or truncated
         next_state = state_handler.update_state(state, obs)

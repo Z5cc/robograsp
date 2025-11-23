@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from CONSTANTS import BATCH_SIZE, GAMMA, EPS_START, EPS_END, EPS_DECAY, TAU, LR, DEVICE, N_ACTIONS
+from CONSTANTS import BATCH_SIZE, GAMMA, EPS_START, EPS_END, EPS_DECAY, TAU, LR, DEVICE, N_ACTIONS, C
 
 
 class Network(nn.Module):
@@ -13,7 +13,7 @@ class Network(nn.Module):
     def __init__(self):
         super(Network, self).__init__()
         self.pool1 = nn.MaxPool2d((2,2),stride=(2,2))
-        self.conv1 = nn.Conv2d(4,8,(3,3),padding='same')
+        self.conv1 = nn.Conv2d(C,8,(3,3),padding='same')
         self.conv2 = nn.Conv2d(8,16,(3,3),padding='same')
         self.conv3 = nn.Conv2d(16,16,(3,3),padding='same')
         self.lin1 = nn.Linear(8*8*16, N_ACTIONS)
