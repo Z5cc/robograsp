@@ -12,7 +12,7 @@ from assets.env import Env
 def test_action_grasp():
     env = Env()
     env.reset_with_params(tcp_center=CONE_CENTER,tcp_target=(0,0,0),
-                          obj_pos=(0,0,0),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
+                          obj_pos=(0,0,-0.02),obj_orn=p.getQuaternionFromEuler((0,0,0)),obj_index=1)
     env.step(0) # action 0 is robot.grasp()
     assert env.reward_handler.successfull_grasp()
     env.close()

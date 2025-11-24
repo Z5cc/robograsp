@@ -40,5 +40,7 @@ while True:
     # print(f'hi:{hi}')
     # print(f'obs:{obs}')
     # print(f'shoulder_torque:{env.robot.get_shoulder_torque()}')
-    # print(f'gripper_torque:{env.robot.gripper.get_torque()}')
+    # print(f'gripper_torque:{env.robot.gripper._get_torque()}')
+    # print(f'gripper_angle:{env.robot.gripper._get_angle()}')
+    # print(f'gripper_opening_length:{env.robot.gripper._get_opening_length()}')
     # print(f'ray_offest:{env.reward.ray_offset()}')
