@@ -4,8 +4,8 @@ import random
 from scipy.spatial.transform import Rotation as R
 
 from CONSTANTS import CONE_CENTER, NUMERIC_DAMPING, BASE_POS, BASE_ORN, TCP_UP
-from assets.util import target_from_delta_to_world, target_from_world_to_tcp
-from assets.gripper import Gripper
+from environment.util import target_from_delta_to_world, target_from_world_to_tcp
+from environment.gripper import Gripper
 
 
 class Joint():
@@ -127,10 +127,10 @@ class Robot:
             
     def move_gripper(self, open_length):
         self.gripper.move(open_length)
-    
+
 
     # FUNCTIONS FOR ACTIONS
-    # ACTION 0
+    # ACTION 0 [GRASP]
     def grasp(self):
         yield from self.approach()
         liftable = yield from self.close()
@@ -139,7 +139,6 @@ class Robot:
         else:
             yield from self.retreat()
 
-    # ACTION 1 - ...
     def approach(self):
         dx = 0.005
         delta = [dx,0,0,0,0,0]
@@ -186,6 +185,7 @@ class Robot:
             self.move_tcp_delta(delta)
             yield 30
 
+    # ACTION 1 - 12 [SEEK]
     def seek(self,action):
         # default deltas
         dt = 0.015

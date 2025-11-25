@@ -7,11 +7,11 @@ import random
 from typing import Optional
 
 from CONSTANTS import VIS, REALTIME, SIMULATION_STEP_DELAY, N_ACTIONS, H, W, CONE_CENTER
-from assets.util import random_quaternion
-from assets.rewardhandler import RewardHandler
-from assets.camera import Camera
-from assets.robot import Robot
-from assets.obj import Obj
+from environment.util import random_quaternion
+from environment.rewardhandler import RewardHandler
+from environment.camera import Camera
+from environment.robot import Robot
+from environment.obj import Obj
 
 
 class Env(gym.Env):
@@ -22,7 +22,7 @@ class Env(gym.Env):
         p.setGravity(0, 0, -10)
         self.steps = 0
         self.max_steps = 100
-        # load assets
+        # load environment
         self.planeID = p.loadURDF("plane.urdf")
         self.robot = Robot()
         self.obj = Obj()

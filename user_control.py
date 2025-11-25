@@ -2,9 +2,9 @@ import pybullet as p
 import time
 
 from CONSTANTS import CONE_CENTER
-from assets.robot import Robot
-from assets.obj import Obj
-from assets.env import Env
+from environment.robot import Robot
+from environment.obj import Obj
+from environment.env import Env
 
 
 def read_debug_parameter(dx_in, dy_in, dz_in, droll_in, dpitch_in, dyaw_in, gr_in):

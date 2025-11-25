@@ -4,9 +4,9 @@ import torch
 import time
 
 from CONSTANTS import CONE_CENTER
-from assets.robot import Robot
-from assets.obj import Obj
-from assets.env import Env
+from environment.robot import Robot
+from environment.obj import Obj
+from environment.env import Env
 
 
 def test_action_grasp():

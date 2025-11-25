@@ -3,12 +3,12 @@ import torch
 from itertools import count
 
 from CONSTANTS import NUM_EPISODES, DEVICE
-from assets.robot import Robot
-from assets.obj import Obj
-from assets.env import Env
-from algorithms.dqnagent import DQNAgent
-from algorithms.replaymemory import ReplayMemory
-from algorithms.statehandler import StateHandler
+from environment.robot import Robot
+from environment.obj import Obj
+from environment.env import Env
+from algorithm.dqnagent import DQNAgent
+from algorithm.replaymemory import ReplayMemory
+from algorithm.statehandler import StateHandler
 
 
 def plot_durations(episode_durations):
