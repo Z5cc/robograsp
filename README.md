@@ -22,7 +22,7 @@ python3 --version
 Create a virtual environment, activate it and install the requirements:
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 Run the *train.py* file for reinforcement learning. Run the *user_control.py* file for being able to manually control the robot for testing purposes:
