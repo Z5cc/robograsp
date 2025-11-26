@@ -25,7 +25,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run the *train.py* file for reinforcement learning. 
+Run the *train.py* file for reinforcement learning:
 ```bash
 python3 train.py
 ```
@@ -35,7 +35,7 @@ Run the *user_control.py* file for being able to manually control the robot for 
 python3 user_control.py
 ```
 
-For parameters modify the *constants.py* file.
+For parameters modify the *constants.py* file. Setting *N_ACTIONS=7* deactivates rotational movements of the TCP and enables much faster training. To be able to run the *user_control.py* you have to set *VIS=True*.
 
 
 ## Environment
