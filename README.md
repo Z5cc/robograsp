@@ -30,25 +30,21 @@ For parameters modify the *constants.py* file.
 
 **State Space**
 
-$S=\\{s \in \mathbb{R}^{C \times H \times W}\\}$  
+$S=\\{s \in \mathbb{R}^{C \times H \times W}\\}$<br>
 For the state space tensors of the form CxHxW are employed.  
 HxW represent the size of the depth image and is set to 16x16.  
 C represents the stack of history of depth images and is set to 4. After each step a new observation, in the form of a new depth image of size HxW, is returned. Then the state is updated by this observation by shifting the stack by -1 and then inserting the observation at last position in the stack. The stack is initiated by copying the first observation C times.  
 
 **Action Space**
 
-$A=\\{grasp,-x,+x,-y,+y,-z,+z,-roll,+roll,-pitch,+pitch,-yaw,+yaw\\}$  
+$A=\\{grasp,-x,+x,-y,+y,-z,+z,-roll,+roll,-pitch,+pitch,-yaw,+yaw\\}$<br>
 For the action space 13 possible discrete actions are employed. They can be cathegorized into *grasp* and actions for *seek*.  
 The first action, *grasp*, is about the gripper moving forward until something is hit, then the gripper is closed. If during the closing process, the gripper registered that it grips something, the gripper is lifted. Otherwise the gripper is reopened and retreated.  
 The other twelve actions for *seek* are about moving the TCP of the gripper in all translational directions by increments of 15 mm and all rotational directions by increments of 0.05 rad. The movements are relative to the coordinate axis of the TCP, not the axis of the world.
 
 **Rewards**
 
-$r(s) =
-\begin{cases}
-100, & \text{if object.z > threshold} \\
-0,   & \text{else}
-\end{cases}$   
+![equation](https://latex.codecogs.com/svg.image?$r(s)=%5Cbegin%7Bcases%7D100,&%5Ctext%7Bif%20object.z%7D%3E%5Ctext%7Bthreshold%7D%5C%5C0,&%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D$)<br>
 For the reward function a threshold is set. If during a step the object reaches that threshold height, a reward of 100 is given. Otherwise a reward of 0 is given. In addition to that, other reward functions involving distance and offset calculations have been tried. However they did not mark any improvements. Also when incorporating potential based reward shaping according to *Andrew Y. Ng*, no improvement could be determined  for these new reward functions.
 
 
@@ -56,7 +52,7 @@ For the reward function a threshold is set. If during a step the object reaches 
 
 For the algorithm DQN is employed due to its simplicity. The neural network for the policy and target network consists mainly of convolutional layers, because of the following theoretical idea. The scheme of this idea is explained in the following: Kernels of the form high-low-high would detect far-close-far patterns in the image which would represent good places to grasp. The policy network which takes as a input a state $s \in \mathcal{S}$ and outputs an action $a \in \mathcal{A}$ is designed in the following way:  
 
->4x16x16 -> **conv(3)** -> 8x16x16 -> **pool(2)** -> 8x8x8 -> **conv(3)** -> 16x8x8 -> **conv(3)** -> 16x8x8 -> **Flatten** -> 1024 -> **FC** -> 13
+4x16x16 -> **conv(3)** -> 8x16x16 -> **pool(2)** -> 8x8x8 -> **conv(3)** -> 16x8x8 -> **conv(3)** -> 16x8x8 -> **Flatten** -> 1024 -> **FC** -> 13
 
 <h2>Demo</h2>
 
