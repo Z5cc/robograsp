@@ -12,14 +12,14 @@ LR = 0.0003
 DEVICE = 'cpu'
 NUM_EPISODES = 10000
 
-VIS = True
-REALTIME = True
+VIS = False
+REALTIME = False
 SIMULATION_STEP_DELAY = 1 / 240.
 
 C = 4
 H = 16
 W = 16
-N_ACTIONS = 13
+N_ACTIONS = 13 # N_ACTIONS=7 for only translational seek movements
 
 BASE_POS = (0,0.5,0) # robot base position
 BASE_ORN = p.getQuaternionFromEuler((0,0,0)) # robot base orientation
