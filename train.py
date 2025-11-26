@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from itertools import count
 
-from CONSTANTS import NUM_EPISODES, DEVICE
+from constants import NUM_EPISODES, DEVICE
 from environment.robot import Robot
 from environment.obj import Obj
 from environment.env import Env

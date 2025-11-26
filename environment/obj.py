@@ -3,7 +3,7 @@ from pathlib import Path
 import pybullet_data
 import random
 
-from CONSTANTS import LL_T, UL_T
+from constants import LL_T, UL_T
 
 
 class Obj:

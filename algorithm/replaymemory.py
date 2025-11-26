@@ -2,7 +2,7 @@ from collections import namedtuple, deque
 import random
 import torch
 
-from CONSTANTS import BATCH_SIZE
+from constants import BATCH_SIZE
 
 
 Transition = namedtuple('Transition',

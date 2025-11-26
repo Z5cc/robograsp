@@ -3,7 +3,7 @@ import numpy as np
 import random
 from scipy.spatial.transform import Rotation as R
 
-from CONSTANTS import CONE_CENTER, NUMERIC_DAMPING, BASE_POS, BASE_ORN, TCP_UP
+from constants import CONE_CENTER, NUMERIC_DAMPING, BASE_POS, BASE_ORN, TCP_UP
 from environment.util import target_from_delta_to_world, target_from_world_to_tcp
 from environment.gripper import Gripper
 

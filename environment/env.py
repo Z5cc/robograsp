@@ -6,7 +6,7 @@ import time
 import random
 from typing import Optional
 
-from CONSTANTS import VIS, REALTIME, SIMULATION_STEP_DELAY, N_ACTIONS, H, W, CONE_CENTER
+from constants import VIS, REALTIME, SIMULATION_STEP_DELAY, N_ACTIONS, H, W, CONE_CENTER
 from environment.util import random_quaternion
 from environment.rewardhandler import RewardHandler
 from environment.camera import Camera

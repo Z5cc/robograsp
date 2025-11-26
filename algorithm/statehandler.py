@@ -1,6 +1,6 @@
 import torch
 
-from CONSTANTS import DEVICE, C
+from constants import DEVICE, C
 
 
 class StateHandler:

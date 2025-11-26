@@ -9,7 +9,7 @@ One of the findings was that a low resolution of for example 16x16 is sufficient
 <h2>Installation</h2>
 
 Clone the project and move into the directory:
->git clone https&#58;&#47;&#47;github&#46;com/Z5cc/robograsp&#46;git  
+>git clone https://github.com/Z5cc/robograsp.git  
 >cd robograsp
 
 Make sure you have *Python 3.9* installed and activated. You can check with:
@@ -23,21 +23,21 @@ Run the *train.py* file for reinforcement learning. Run the *user_control.py* fi
 >python3 train.py  
 >python3 user_control.py
 
-For parameters modify the *CONSTANTS.py* file.
+For parameters modify the *constants.py* file.
 
 
 <h2>Environment</h2>
 
 **State Space**
 
-$S=\left\{s \in \mathbb{R}^{C \times H \times W}\right\}$  
+$S=\\{s \in \mathbb{R}^{C \times H \times W}\\}$  
 For the state space tensors of the form CxHxW are employed.  
 HxW represent the size of the depth image and is set to 16x16.  
 C represents the stack of history of depth images and is set to 4. After each step a new observation, in the form of a new depth image of size HxW, is returned. Then the state is updated by this observation by shifting the stack by -1 and then inserting the observation at last position in the stack. The stack is initiated by copying the first observation C times.  
 
 **Action Space**
 
-$A=\left\{grasp,-x,+x,-y,+y,-z,+z,-roll,+roll,-pitch,+pitch,-yaw,+yaw\right\}$  
+$A=\\{grasp,-x,+x,-y,+y,-z,+z,-roll,+roll,-pitch,+pitch,-yaw,+yaw\\}$  
 For the action space 13 possible discrete actions are employed. They can be cathegorized into *grasp* and actions for *seek*.  
 The first action, *grasp*, is about the gripper moving forward until something is hit, then the gripper is closed. If during the closing process, the gripper registered that it grips something, the gripper is lifted. Otherwise the gripper is reopened and retreated.  
 The other twelve actions for *seek* are about moving the TCP of the gripper in all translational directions by increments of 15 mm and all rotational directions by increments of 0.05 rad. The movements are relative to the coordinate axis of the TCP, not the axis of the world.

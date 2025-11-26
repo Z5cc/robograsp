@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import time
 
-from CONSTANTS import CONE_CENTER
+from constants import CONE_CENTER
 from environment.robot import Robot
 from environment.obj import Obj
 from environment.env import Env

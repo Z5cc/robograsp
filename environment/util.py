@@ -3,7 +3,7 @@ import numpy as np
 import quaternion
 import pybullet as p
 
-from CONSTANTS import CONE_CENTER, CONE_TAR, CONE_PHI, LL_T, UL_T
+from constants import CONE_CENTER, CONE_TAR, CONE_PHI, LL_T, UL_T
 
 
 def target_from_delta_to_world(t, r, delta):

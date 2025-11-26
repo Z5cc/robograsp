@@ -1,7 +1,7 @@
 import pybullet as p
 import numpy as np
 
-from CONSTANTS import GAMMA
+from constants import GAMMA
 
 
 class RewardHandler:
