@@ -3,23 +3,23 @@ import pybullet as p
 
 
 BATCH_SIZE = 128
-GAMMA = 0.99
-EPS_START = 0.9 # EPS_START is the starting value of epsilon
-EPS_END = 0.01 # EPS_END is the final value of epsilon
-EPS_DECAY = 5000 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
-TAU = 0.005 # TAU is the update rate of the target network
-LR = 0.0003
+GAMMA = 0.99 # discount factor
+EPS_START = 0.9 # starting value of epsilon
+EPS_END = 0.01 # final value of epsilon
+EPS_DECAY = 5000 # controls the rate of exponential decay of epsilon, higher means a slower decay
+TAU = 0.005 # update rate of the target network
+LR = 0.0003 # learning rate
 DEVICE = 'cpu'
 NUM_EPISODES = 10000
 
-VIS = False
-REALTIME = False
-SIMULATION_STEP_DELAY = 1 / 240.
+VIS = False # visualization of pybullet
+REALTIME = False # running simulation in realtime
+SIMULATION_STEP_DELAY = 1 / 240. # one simulation step accounts for that amount of time
 
-C = 4
-H = 16
-W = 16
-N_ACTIONS = 13 # N_ACTIONS=7 for only translational seek movements
+C = 4 # for incorporating not only present, but also past images
+H = 16 # height of image
+W = 16 # width of image
+N_ACTIONS = 13 # N_ACTIONS=7 for translational seek, N_ACTIONS=13 for translational and rotational seek
 
 BASE_POS = (0,0.5,0) # robot base position
 BASE_ORN = p.getQuaternionFromEuler((0,0,0)) # robot base orientation
