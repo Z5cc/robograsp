@@ -25,9 +25,13 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run the *train.py* file for reinforcement learning. Run the *user_control.py* file for being able to manually control the robot for testing purposes:
+Run the *train.py* file for reinforcement learning. 
 ```bash
 python3 train.py
+```
+
+Run the *user_control.py* file for being able to manually control the robot for testing purposes:
+```bash
 python3 user_control.py
 ```
 
