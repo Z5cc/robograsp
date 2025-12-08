@@ -2,9 +2,9 @@
 
 2025-11-24 by David Nicklaser  
 
-The project simulates robotic grasping in pybullet. The simulated robot is a UR5 arm in combination with the 2F-85 robotiq gripper and a depth camera mounted at the gripper. Reinforcement learning is done via DQN.  
+The project simulates robotic grasping in pybullet. The setup consists of a UR5 robot arm combined with the Robotiq 2F-85 gripper, along with a depth camera mounted on the gripper. Reinforcement learning is carried out using DQN.  
 
-One of the findings was that a low resolution of for example 16x16 is sufficient for computer vision based grasping. This indicates that sim-2-real is not necessary in this case and a real robot might learn the policy directly. Deployment in the real world can be done by a 2 stage pipeline. In the first stage an object is detected via for example YOLO, then the gripper moves closer to that object. After moving closer, in stage two, the policy from this project is employed by the robot to grasp at an advantageous location of the object.  
+One key finding is that a very low image resolution, such as 16×16, is sufficient for vision-based grasping. This suggests that sim-to-real may not be necessary in this case, and that a real robot could potentially learn the policy directly. Deployment in the real world can be organized as a two-stage pipeline. In the first stage, an object is detected using a method such as YOLO, and the gripper moves closer to it. After moving closer to the object, the second stage employs the policy learned in this project to grasp at an advantageous location of the object.  
 
 ## Installation
 
@@ -35,7 +35,7 @@ Run the *user_control.py* file for being able to manually control the robot for 
 python3 user_control.py
 ```
 
-For parameters modify the *constants.py* file. Setting *N_ACTIONS=7* deactivates rotational movements of the TCP and enables much faster training. To be able to run the *user_control.py* you have to set *VIS=True*.
+To adjust parameters, modify the *constants.py* file. Setting *N_ACTIONS=7* disables rotational movements of the TCP and allows for much faster training. To run *user_control.py*, you need to set *VIS=True*.
 
 
 ## Environment
@@ -43,32 +43,31 @@ For parameters modify the *constants.py* file. Setting *N_ACTIONS=7* deactivates
 **State Space**
 
 $S=\\{s \in \mathbb{R}^{C \times H \times W}\\}$  
-For the state space tensors of the form CxHxW are employed.  
-HxW represent the size of the depth image and is set to 16x16.  
-C represents the stack of history of depth images and is set to 4. After each step a new observation, in the form of a new depth image of size HxW, is returned. Then the state is updated by this observation by shifting the stack by -1 and then inserting the observation at last position in the stack. The stack is initiated by copying the first observation C times.  
+The state space uses tensors of the form C×H×W.  
+H×W corresponds to the size of the depth image and is set to 16×16.  
+C represents the number of stacked depth images and is set to 4. After each step, a new observation in the form of a depth image of size H×W is returned. The state is then updated by shifting the stack by –1 and inserting the new observation in the last position. The stack is initialized by copying the first observation C times.  
 
 **Action Space**
 
 $A=\\{grasp,-x,+x,-y,+y,-z,+z,-roll,+roll,-pitch,+pitch,-yaw,+yaw\\}$  
-For the action space 13 possible discrete actions are employed. They can be cathegorized into *grasp* and actions for *seek*.  
-The first action, *grasp*, is about the gripper moving forward until something is hit, then the gripper is closed. If during the closing process, the gripper registered that it grips something, the gripper is lifted. Otherwise the gripper is reopened and retreated.  
-The other twelve actions for *seek* are about moving the TCP of the gripper in all translational directions by increments of 15 mm and all rotational directions by increments of 0.05 rad. The movements are relative to the coordinate axis of the TCP, not the axis of the world.
+The action space consists of 13 discrete actions, which can be grouped into grasp and seek actions.  
+The first action, grasp, makes the gripper move forward until it hits something. Then the gripper closes. If the gripper detects that it is holding something while closing, it lifts as long as it continues to grip something. If not, the gripper reopens, retreats and continues with the next action.  
+The remaining twelve seek actions move the TCP of the gripper in all translational directions in steps of 15 mm, and in all rotational directions in steps of 0.05 rad. All movements are defined relative to the TCP coordinate frame, not the world frame.  
 
 **Rewards**
 
 ![equation](https://latex.codecogs.com/svg.image?$r(s)=%5Cbegin%7Bcases%7D100,&%5Ctext%7Bif%20object.z%7D%3E%5Ctext%7Bthreshold%7D%5C%5C0,&%5Ctext%7Botherwise%7D%5Cend%7Bcases%7D$)  
-For the reward function a threshold is set. If during a step the object reaches that threshold height, a reward of 100 is given. Otherwise a reward of 0 is given. In addition to that, other reward functions involving distance and offset calculations have been tried. However they did not mark any improvements. Also when incorporating potential based reward shaping according to *Andrew Y. Ng*, no improvement could be determined  for these new reward functions.
-
+For the reward function a height threshold is set. If during a step the object reaches that threshold, a reward of 100 is given. Otherwise, the reward is 0. In addition to that, other reward functions involving distance and offset calculations were tested. However they did not mark any improvements. Also when incorporating potential based reward shaping according to *Andrew Y. Ng*, no improvement could be determined  for these new reward functions.  
 
 ## Algorithm
 
-For the algorithm DQN is employed due to its simplicity. The neural network for the policy and target network consists mainly of convolutional layers, because of the following theoretical idea. The scheme of this idea is explained in the following: Kernels of the form high-low-high would detect far-close-far patterns in the image which would represent good places to grasp. The policy network which takes as a input a state $s \in \mathcal{S}$ and outputs an action $a \in \mathcal{A}$ is designed in the following way:  
+DQN is used for the algorithm because of its simplicity. The neural network for the policy and the target network is mainly built from convolutional layers, based on the following idea. Kernels with a high–low–high pattern can detect far–close–far structures in the image, which correspond to good grasp locations. The policy network, which takes a state $s \in \mathcal{S}$ as input and outputs an action $a \in \mathcal{A}$, is designed as follows:  
 
 4x16x16 -> **conv(3)** -> 8x16x16 -> **pool(2)** -> 8x8x8 -> **conv(3)** -> 16x8x8 -> **conv(3)** -> 16x8x8 -> **Flatten** -> 1024 -> **FC** -> 13
 
 ## Demo
 
-The demo shows training at around episode 700. Also the RGB camera is displayed, only the depth camera is used.  
+The demo shows the training process at around episode 700. Although the RGB camera view is displayed, only the depth camera is actually used.  
 
 ![gif](demo.gif)
 
